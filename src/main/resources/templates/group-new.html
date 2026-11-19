@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Create a group')}"></head>
+<body>
+<header th:replace="~{fragments :: topNav}"></header>
+<main class="narrow">
+    <h1>Create a group</h1>
+    <p class="muted">You need the group creation code from the site developer.</p>
+
+    <ul class="error" th:if="${errors}">
+        <li th:each="e : ${errors}" th:text="${e}">Error</li>
+    </ul>
+
+    <form th:action="@{/groups}" method="post" class="form">
+        <label>Group creation code
+            <input type="password" name="creationCode" autocomplete="off" required>
+        </label>
+        <label>Group name
+            <input type="text" name="groupName" th:value="${groupName}" maxlength="60" required>
+        </label>
+        <label>Description (optional)
+            <input type="text" name="description" th:value="${description}" maxlength="200">
+        </label>
+        <label>Group passphrase (8+ characters)
+            <!-- autocomplete="new-password" lets phones suggest a strong passphrase -->
+            <input type="password" name="passphrase" minlength="8" autocomplete="new-password" required>
+        </label>
+        <label>Passphrase again
+            <input type="password" name="passphraseConfirm" minlength="8" autocomplete="new-password" required>
+        </label>
+        <p class="small muted">Share the passphrase only with your group's organizers.
+            It cannot be shown again later. If you forget it, ask the site developer to reset it.</p>
+        <button type="submit">Create group</button>
+    </form>
+</main>
+</body>
+</html>

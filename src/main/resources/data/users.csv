@@ -1,0 +1,13 @@
+StudentID,Name,Email,GroupID,Role
+123456789,Riley Morgan,riley@email.com,GRIT,Owner
+987654321,John Doe,john@email.com,GRIT,Member
+112233445,Jane Smith,jane@email.com,JapaneseClub,Guest
+223344556,Yuki Tanaka,yuki@email.com,GRIT,Admin
+334455667,Alice Johnson,alice@email.com,JapaneseClub,Member
+445566778,Bob Lee,bob@email.com,GRIT,Guest
+556677889,Hana Yamada,hana@email.com,JapaneseClub,Owner
+667788990,Tom Brown,tom@email.com,CodeClub,Member
+778899001,Mia Chen,mia@email.com,CodeClub,Admin
+889900112,Kenji Ito,kenji@email.com,GRIT,Member
+990011223,Sara Park,sara@email.com,CodeClub,Guest
+101122334,Liam Nguyen,liam@email.com,JapaneseClub,Member

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('New event')}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main>
+    <h1>Create event</h1>
+    <p class="muted">Group: <strong th:text="${group.groupName}">GRIT</strong></p>
+
+    <ul class="error" th:if="${errors}">
+        <li th:each="e : ${errors}" th:text="${e}">Error</li>
+    </ul>
+
+    <form th:action="@{/g/{id}/events(id=${group.groupId})}" method="post" class="form">
+        <label>Event name
+            <input type="text" name="eventName" th:value="${eventName}" required>
+        </label>
+        <label>Date
+            <input type="date" name="eventDate" th:value="${eventDate}" required>
+        </label>
+        <label>Location
+            <input type="text" name="location" th:value="${location}">
+        </label>
+        <button type="submit">Create</button>
+    </form>
+</main>
+</body>
+</html>

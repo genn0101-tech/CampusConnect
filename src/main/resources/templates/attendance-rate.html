@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Attendance rate')}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main>
+    <h1>Attendance rate</h1>
+    <p class="muted small">Attended events / events of this group held so far (date is today or earlier). Guests are not included.</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr><th>StudentID</th><th>Name</th><th>Role</th><th>Attended</th><th>Rate</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${rates}">
+                <td th:text="${r.studentId()}">123456789</td>
+                <td th:text="${r.name()}">Name</td>
+                <td th:text="${r.role()}">Member</td>
+                <td th:text="${r.attendedEvents()} + ' / ' + ${r.heldEvents()}">1 / 2</td>
+                <td th:text="${r.ratePercent() != null} ? ${#numbers.formatDecimal(r.ratePercent(), 1, 0)} + '%' : '—'">50%</td>
+            </tr>
+            <tr th:if="${rates.isEmpty()}"><td colspan="5">No members in this group.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

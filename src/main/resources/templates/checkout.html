@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Check out')}"></head>
+<body>
+<header th:replace="~{fragments :: topNav}"></header>
+<main class="narrow">
+    <h1>Check out</h1>
+    <p class="event-name" th:text="${event.eventName}">Event name</p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+
+    <form th:action="@{/events/{id}/checkout(id=${event.eventId})}" method="post" class="form">
+        <label>Student ID
+            <input type="text" name="studentId" inputmode="numeric" autocomplete="off" required autofocus>
+        </label>
+        <button type="submit">Check out</button>
+    </form>
+
+    <p class="small">Just arrived? <a th:href="@{/events/{id}/checkin(id=${event.eventId})}">Check in here</a></p>
+</main>
+</body>
+</html>

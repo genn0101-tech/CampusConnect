@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${group.groupName})}"></head>
+<body>
+<header th:replace="~{fragments :: topNav}"></header>
+<main class="narrow">
+    <h1 th:text="${group.groupName}">Group</h1>
+    <p>Enter this group's passphrase to see and create its events.</p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Wrong passphrase.</p>
+
+    <form th:action="@{/g/{id}/unlock(id=${group.groupId})}" method="post" class="form">
+        <label>Group passphrase
+            <input type="password" name="passphrase" required autofocus autocomplete="off">
+        </label>
+        <button type="submit">Unlock</button>
+    </form>
+</main>
+</body>
+</html>

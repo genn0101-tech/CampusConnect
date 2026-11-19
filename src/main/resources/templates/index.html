@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Groups')}"></head>
+<body>
+<header th:replace="~{fragments :: topNav}"></header>
+<main>
+    <h1>Choose your group</h1>
+    <p class="muted">Each group's events are only visible with that group's passphrase.<br>
+        Checking in to an event? Just scan the QR code at the entrance.</p>
+
+    <p th:if="${groups.isEmpty()}">No groups yet.</p>
+
+    <ul class="cards">
+        <li th:each="g : ${groups}">
+            <a th:href="@{/g/{id}(id=${g.groupId})}">
+                <strong th:text="${g.groupName}">Group name</strong>
+                <span class="muted" th:text="${g.description}">Description</span>
+            </a>
+        </li>
+    </ul>
+
+    <p class="small"><a th:href="@{/groups/new}">Create a new group</a> (needs the group creation code)</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!-- Shared pieces reused by every page with th:replace -->
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <!-- Makes the page fit phone screens -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' | Campus Connect'">Campus Connect</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+
+<body>
+<!-- Top bar outside a group. Not named "nav": that would also match the <nav> element below -->
+<header th:fragment="topNav" class="nav">
+    <a th:href="@{/}" class="brand">Campus Connect</a>
+    <nav>
+        <a th:href="@{/}" class="nav-button">Home</a>
+    </nav>
+</header>
+
+<!-- Top bar inside an unlocked group: Home, plus links only to this group's pages -->
+<header th:fragment="groupNav(group)" class="nav">
+    <a th:href="@{/g/{id}(id=${group.groupId})}" class="brand" th:text="${group.groupName}">Group</a>
+    <nav>
+        <a th:href="@{/}" class="nav-button">Home</a>
+        <a th:href="@{/g/{id}(id=${group.groupId})}" class="nav-button">Group top</a>
+        <a th:href="@{/g/{id}/events/new(id=${group.groupId})}">New event</a>
+        <a th:href="@{/g/{id}/attendance-rate(id=${group.groupId})}">Attendance rate</a>
+        <form th:action="@{/g/{id}/lock(id=${group.groupId})}" method="post" class="nav-form">
+            <button type="submit">Lock</button>
+        </form>
+    </nav>
+</header>
+</body>
+</html>

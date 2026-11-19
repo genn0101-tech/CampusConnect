@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${event.eventName})}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main>
+    <h1 th:text="${event.eventName}">Event name</h1>
+    <p class="muted">
+        <span th:text="${event.eventId}">EVT001</span> ·
+        <span th:text="${event.eventDate}">2026-03-26</span> ·
+        <span th:text="${event.location}">Building A</span>
+    </p>
+
+    <!-- Two QR codes: print them and put check-in at the entrance, check-out at the exit -->
+    <div class="qr-pair">
+        <section class="qr">
+            <h2>CHECK IN</h2>
+            <img th:src="@{/g/{gid}/events/{eid}/qr-checkin.png(gid=${group.groupId},eid=${event.eventId})}"
+                 alt="QR code for check-in" width="300" height="300">
+            <p>Entrance: scan to check in</p>
+            <p class="small"><a th:href="${checkInUrl}" th:text="${checkInUrl}">check-in URL</a></p>
+        </section>
+        <section class="qr">
+            <h2>CHECK OUT</h2>
+            <img th:src="@{/g/{gid}/events/{eid}/qr-checkout.png(gid=${group.groupId},eid=${event.eventId})}"
+                 alt="QR code for check-out" width="300" height="300">
+            <p>Exit: scan to check out</p>
+            <p class="small"><a th:href="${checkOutUrl}" th:text="${checkOutUrl}">check-out URL</a></p>
+        </section>
+    </div>
+
+    <h2>Participants (<span th:text="${participants.size()}">0</span>)</h2>
+    <p>Average stay:
+        <strong th:text="${averageStay != null} ? ${#numbers.formatDecimal(averageStay, 1, 1)} + ' min' : '—'">90.0 min</strong>
+        <span class="muted small">(people who checked out)</span>
+    </p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr><th>Name</th><th>Role</th><th>In</th><th>Out</th><th>Stay</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${participants}">
+                <td th:text="${p.name()}">Name</td>
+                <td th:text="${p.role()}">Member</td>
+                <td th:text="${#temporals.format(p.checkInTime(), 'HH:mm')}">15:00</td>
+                <td th:text="${p.checkOutTime() != null} ? ${#temporals.format(p.checkOutTime(), 'HH:mm')} : '—'">17:00</td>
+                <td th:text="${p.stayMinutes() != null} ? ${p.stayMinutes()} + ' min' : 'Still here'">120 min</td>
+            </tr>
+            <tr th:if="${participants.isEmpty()}"><td colspan="5">Nobody has checked in yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Funding report</h2>
+    <p><a th:href="@{/g/{gid}/events/{eid}/report.csv(gid=${group.groupId},eid=${event.eventId})}" class="button">Download CSV</a></p>
+</main>
+</body>
+</html>

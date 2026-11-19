@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Check in')}"></head>
+<body>
+<header th:replace="~{fragments :: topNav}"></header>
+<main class="narrow">
+    <h1>Check in</h1>
+    <p class="event-name" th:text="${event.eventName}">Event name</p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+
+    <form th:action="@{/events/{id}/checkin(id=${event.eventId})}" method="post" class="form">
+        <label>Student ID
+            <!-- inputmode="numeric" opens the number keyboard on phones -->
+            <input type="text" name="studentId" inputmode="numeric" autocomplete="off" required autofocus>
+        </label>
+        <button type="submit">Check in</button>
+    </form>
+
+    <!-- Tells participants why their data is collected -->
+    <p class="small muted">This data is used only for
+        <span th:text="${group.groupName}">the group</span>'s attendance records.</p>
+    <p class="small">Leaving? <a th:href="@{/events/{id}/checkout(id=${event.eventId})}">Check out here</a></p>
+</main>
+</body>
+</html>

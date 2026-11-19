@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${group.groupName})}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main>
+    <h1>Events</h1>
+    <p><a th:href="@{/g/{id}/events/new(id=${group.groupId})}" class="button">+ Create event</a></p>
+
+    <p th:if="${events.isEmpty()}">No events yet.</p>
+
+    <ul class="cards">
+        <li th:each="event : ${events}">
+            <a th:href="@{/g/{gid}/events/{eid}(gid=${group.groupId},eid=${event.eventId})}">
+                <strong th:text="${event.eventName}">Event name</strong>
+                <span class="muted" th:text="${event.eventDate} + ' · ' + ${event.location}">2026-03-26 · Building A</span>
+            </a>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

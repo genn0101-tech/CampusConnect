@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Developer')}"></head>
+<body>
+<header th:replace="~{fragments :: topNav}"></header>
+<main>
+    <h1>Developer page</h1>
+    <form th:action="@{/admin/logout}" method="post">
+        <button type="submit" class="secondary">Leave developer page</button>
+    </form>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+    <p class="result ok" th:if="${message}" th:text="${message}">Done</p>
+
+    <h2>All groups (<span th:text="${groups.size()}">0</span>)</h2>
+    <p th:if="${groups.isEmpty()}">No groups yet.</p>
+
+    <ul class="cards">
+        <li th:each="g : ${groups}" class="card">
+            <strong th:text="${g.groupName}">Group name</strong>
+            <span class="muted small" th:text="'/g/' + ${g.groupId}">/g/GRIT</span>
+            <span class="muted small" th:text="${g.description}">Description</span>
+            <span class="small" th:if="${g.passphraseHash == null}">No passphrase set (locked for everyone)</span>
+            <!-- Sets a new passphrase. The old one cannot be shown: only its hash is stored. -->
+            <form th:action="@{/admin/groups/{id}/reset-passphrase(id=${g.groupId})}" method="post"
+                  class="form inline">
+                <input type="password" name="newPassphrase" placeholder="New passphrase (8+)"
+                       minlength="8" autocomplete="new-password" required>
+                <button type="submit">Reset passphrase</button>
+            </form>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

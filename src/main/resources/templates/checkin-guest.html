@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Guest registration')}"></head>
+<body>
+<header th:replace="~{fragments :: topNav}"></header>
+<main class="narrow">
+    <h1>First time here?</h1>
+    <p class="event-name" th:text="${event.eventName}">Event name</p>
+    <!-- The Student ID is not shown on check-in pages; it is only sent in the hidden field below -->
+    <p>We don't know this Student ID yet. Please enter your name and email once.</p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+
+    <form th:action="@{/events/{id}/checkin/guest(id=${event.eventId})}" method="post" class="form">
+        <input type="hidden" name="studentId" th:value="${studentId}">
+        <label>Name
+            <input type="text" name="name" th:value="${name}" autocomplete="name" required autofocus>
+        </label>
+        <label>Email
+            <input type="email" name="email" th:value="${email}" autocomplete="email" required>
+        </label>
+        <button type="submit">Register and check in</button>
+    </form>
+
+    <!-- Tells participants why their data is collected -->
+    <p class="small muted">This data is used only for
+        <span th:text="${group.groupName}">the group</span>'s attendance records.</p>
+    <p class="small"><a th:href="@{/events/{id}/checkin(id=${event.eventId})}">Wrong Student ID? Go back</a></p>
+</main>
+</body>
+</html>

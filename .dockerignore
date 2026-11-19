@@ -1,0 +1,9 @@
+# Files that must never go into the Docker image
+.git
+target/
+db/
+legacy/
+CLAUDE.md
+*.log
+.env
+.vscode/
