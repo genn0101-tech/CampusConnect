@@ -21,6 +21,14 @@
         <label>Location
             <input type="text" name="location" th:value="${location}">
         </label>
+        <!-- Optional: an event does not need a folder -->
+        <label th:unless="${folders.isEmpty()}">Folder (optional)
+            <select name="folderId">
+                <option value="">No folder</option>
+                <option th:each="f : ${folders}" th:value="${f.folderId}" th:text="${f.name}"
+                        th:selected="${f.folderId == folderId}">Weekly Meeting</option>
+            </select>
+        </label>
         <button type="submit">Create</button>
     </form>
 </main>

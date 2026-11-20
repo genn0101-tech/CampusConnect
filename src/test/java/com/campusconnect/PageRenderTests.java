@@ -80,6 +80,27 @@ class PageRenderTests {
     }
 
     @Test
+    void folderPagesOpen() throws Exception {
+        assertEquals(200, get("/g/GRIT/folders/new").statusCode());
+        assertEquals(302, post("/g/GRIT/folders", "name=Page+Folder").statusCode());
+        String groupPage = get("/g/GRIT").body();
+        assertTrue(groupPage.contains("Page Folder"));
+        assertTrue(groupPage.contains("No folder")); // EVT001 has no folder
+
+        // Find the new folder's link on the group page, e.g. /g/GRIT/folders/1
+        int start = groupPage.indexOf("/g/GRIT/folders/", groupPage.indexOf("folder-section"));
+        String folderUrl = groupPage.substring(start, groupPage.indexOf('"', start));
+        assertEquals(200, get(folderUrl).statusCode());
+        assertEquals(200, get("/g/GRIT/events/new?folderId=" + folderUrl.replaceAll("\\D", "")).statusCode());
+
+        assertEquals(302, post(folderUrl + "/archive", "").statusCode());
+        assertTrue(get(folderUrl).body().contains("Archived: this folder"));
+        assertEquals(200, get(folderUrl + "/delete").statusCode());
+        assertEquals(302, post(folderUrl + "/delete", "").statusCode());
+        assertEquals(404, get(folderUrl).statusCode());
+    }
+
+    @Test
     void checkInAndCheckOutPagesOpen() throws Exception {
         assertEquals(200, get("/events/EVT003/checkin").statusCode());
         assertEquals(200, get("/events/EVT003/checkout").statusCode());

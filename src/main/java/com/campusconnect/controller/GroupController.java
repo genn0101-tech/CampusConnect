@@ -4,6 +4,7 @@ import com.campusconnect.model.Event;
 import com.campusconnect.model.Group;
 import com.campusconnect.service.AttendanceService;
 import com.campusconnect.service.EventService;
+import com.campusconnect.service.FolderService;
 import com.campusconnect.service.GroupAccess;
 import com.campusconnect.service.GroupPassphrase;
 import com.campusconnect.service.GroupService;
@@ -33,15 +34,17 @@ public class GroupController {
     private final AttendanceService attendanceService;
     private final GroupPassphrase groupPassphrase;
     private final GroupAccess groupAccess;
+    private final FolderService folderService;
 
     public GroupController(GroupService groupService, EventService eventService,
                            AttendanceService attendanceService, GroupPassphrase groupPassphrase,
-                           GroupAccess groupAccess) {
+                           GroupAccess groupAccess, FolderService folderService) {
         this.groupService = groupService;
         this.eventService = eventService;
         this.attendanceService = attendanceService;
         this.groupPassphrase = groupPassphrase;
         this.groupAccess = groupAccess;
+        this.folderService = folderService;
     }
 
     // ---------- Group home: passphrase form or event list ----------
@@ -53,8 +56,9 @@ public class GroupController {
         if (!groupAccess.isUnlocked(session, groupId)) {
             return "group-locked";
         }
-        model.addAttribute("upcoming", eventService.upcomingEvents(groupId));
-        model.addAttribute("past", eventService.pastEvents(groupId));
+        // One section per folder (Upcoming / Past), then the events without a folder
+        model.addAttribute("sections", folderService.groupSections(groupId));
+        model.addAttribute("archivedFolders", folderService.archivedFolders(groupId));
         model.addAttribute("archived", eventService.archivedEvents(groupId));
         return "group";
     }
@@ -81,12 +85,16 @@ public class GroupController {
     // ---------- Event creation (unlocked groups only) ----------
 
     @GetMapping("/g/{groupId}/events/new")
-    public String newEventForm(@PathVariable String groupId, HttpSession session, Model model) {
+    public String newEventForm(@PathVariable String groupId,
+                               @RequestParam(required = false) Long folderId, // preselected from a folder page
+                               HttpSession session, Model model) {
         Group group = groupService.getGroup(groupId);
         if (!groupAccess.isUnlocked(session, groupId)) {
             return "redirect:/g/" + groupId;
         }
         model.addAttribute("group", group);
+        model.addAttribute("folders", folderService.activeFolders(groupId));
+        model.addAttribute("folderId", folderId);
         return "event-new";
     }
 
@@ -95,6 +103,7 @@ public class GroupController {
                               @RequestParam String eventName,
                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate eventDate,
                               @RequestParam String location,
+                              @RequestParam(required = false) Long folderId, // empty = no folder
                               HttpSession session, Model model) {
         Group group = groupService.getGroup(groupId);
         if (!groupAccess.isUnlocked(session, groupId)) {
@@ -115,11 +124,15 @@ public class GroupController {
             model.addAttribute("eventName", eventName);
             model.addAttribute("eventDate", eventDate);
             model.addAttribute("location", location);
+            model.addAttribute("folders", folderService.activeFolders(groupId));
+            model.addAttribute("folderId", folderId);
             return "event-new";
         }
 
         // The group comes from the URL, so a group can only create events for itself
-        Event event = eventService.createEvent(eventName.trim(), eventDate, location.trim(), groupId);
+        // checkChosenFolder: 404 if the folder is not this group's (so no event lands in another group's folder)
+        Long folder = folderService.checkChosenFolder(groupId, folderId);
+        Event event = eventService.createEvent(eventName.trim(), eventDate, location.trim(), groupId, folder);
         // Redirect after POST so refreshing the page does not create the event twice
         return "redirect:/g/" + groupId + "/events/" + event.getEventId();
     }

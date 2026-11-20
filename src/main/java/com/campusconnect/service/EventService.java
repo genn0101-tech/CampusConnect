@@ -49,9 +49,19 @@ public class EventService {
 
     /** Not archived, from today on (today counts as upcoming), nearest date first: today, tomorrow, ... */
     public List<Event> upcomingEvents(String groupId) {
+        return upcomingOf(eventRepository.findByGroupId(groupId));
+    }
+
+    /** Not archived, before today, newest date first. */
+    public List<Event> pastEvents(String groupId) {
+        return pastOf(eventRepository.findByGroupId(groupId));
+    }
+
+    /** From a list of events: the upcoming ones that are not archived, nearest date first. */
+    public List<Event> upcomingOf(List<Event> events) {
         LocalDate today = LocalDate.now(clock); // Pacific time
         List<Event> upcoming = new ArrayList<>();
-        for (Event event : eventRepository.findByGroupId(groupId)) {
+        for (Event event : events) {
             if (!event.isArchived() && !event.getEventDate().isBefore(today)) {
                 upcoming.add(event);
             }
@@ -60,15 +70,16 @@ public class EventService {
         return upcoming;
     }
 
-    /** Not archived, before today, newest date first. */
-    public List<Event> pastEvents(String groupId) {
+    /** From a list of events: the past ones that are not archived, newest date first. */
+    public List<Event> pastOf(List<Event> events) {
         LocalDate today = LocalDate.now(clock);
         List<Event> past = new ArrayList<>();
-        for (Event event : eventsOfGroupNewestFirst(groupId)) {
+        for (Event event : events) {
             if (!event.isArchived() && event.getEventDate().isBefore(today)) {
                 past.add(event);
             }
         }
+        past.sort(Comparator.comparing(Event::getEventDate).reversed());
         return past;
     }
 
@@ -100,9 +111,16 @@ public class EventService {
         return event;
     }
 
-    @Transactional
     public Event createEvent(String eventName, LocalDate eventDate, String location, String groupId) {
+        return createEvent(eventName, eventDate, location, groupId, null);
+    }
+
+    /** folderId may be null (no folder). The caller checks that the folder belongs to the group. */
+    @Transactional
+    public Event createEvent(String eventName, LocalDate eventDate, String location, String groupId,
+                             Long folderId) {
         Event event = new Event(nextEventId(), eventName, eventDate, location, groupId);
+        event.moveToFolder(folderId);
         return eventRepository.save(event);
     }
 

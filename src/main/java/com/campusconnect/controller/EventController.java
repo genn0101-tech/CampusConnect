@@ -4,6 +4,7 @@ import com.campusconnect.model.Event;
 import com.campusconnect.model.Group;
 import com.campusconnect.service.AttendanceService;
 import com.campusconnect.service.EventService;
+import com.campusconnect.service.FolderService;
 import com.campusconnect.service.GroupAccess;
 import com.campusconnect.service.GroupService;
 import com.campusconnect.service.ParticipantRow;
@@ -39,11 +40,12 @@ public class EventController {
     private final ReportService reportService;
     private final QrCodeService qrCodeService;
     private final GroupAccess groupAccess;
+    private final FolderService folderService;
     private final String baseUrl;
 
     public EventController(EventService eventService, GroupService groupService,
                            AttendanceService attendanceService, ReportService reportService,
-                           QrCodeService qrCodeService, GroupAccess groupAccess,
+                           QrCodeService qrCodeService, GroupAccess groupAccess, FolderService folderService,
                            @Value("${app.base-url}") String baseUrl) {
         this.eventService = eventService;
         this.groupService = groupService;
@@ -51,6 +53,7 @@ public class EventController {
         this.reportService = reportService;
         this.qrCodeService = qrCodeService;
         this.groupAccess = groupAccess;
+        this.folderService = folderService;
         this.baseUrl = baseUrl;
     }
 
@@ -67,6 +70,10 @@ public class EventController {
         List<ParticipantRow> participants = attendanceService.participants(eventId);
 
         model.addAttribute("group", group);
+        // For "move to folder" on the detail page
+        model.addAttribute("folders", folderService.activeFolders(groupId));
+        model.addAttribute("currentFolder", event.getFolderId() == null
+                ? null : folderService.getFolderInGroup(event.getFolderId(), groupId));
         model.addAttribute("event", event);
         model.addAttribute("participants", participants);
         model.addAttribute("averageStay", attendanceService.averageStayMinutes(participants));

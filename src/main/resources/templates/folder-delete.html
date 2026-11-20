@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Delete folder')}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main class="narrow">
+    <h1>Delete this folder?</h1>
+    <p class="event-name" th:text="${folder.name}">Weekly Meeting</p>
+
+    <div class="result warn">
+        <p><strong>Only the folder is deleted.</strong>
+            Its <span th:text="${eventCount}">5</span> events are kept and move to "No folder".</p>
+    </div>
+
+    <form method="post" th:action="@{/g/{gid}/folders/{fid}/delete(gid=${group.groupId},fid=${folder.folderId})}">
+        <button type="submit" class="danger">Delete folder</button>
+    </form>
+
+    <p class="small"><a th:href="@{/g/{gid}/folders/{fid}(gid=${group.groupId},fid=${folder.folderId})}">Cancel</a></p>
+</main>
+</body>
+</html>

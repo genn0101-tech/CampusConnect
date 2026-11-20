@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${folder.name})}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main>
+    <p class="small"><a th:href="@{/g/{id}(id=${group.groupId})}">← All events</a></p>
+    <h1 th:text="${folder.name}">Weekly Meeting</h1>
+
+    <p class="result ok" th:if="${message}" th:text="${message}">Done</p>
+    <p class="result warn" th:if="${folder.archived}">Archived: this folder and its events are hidden from the event lists.</p>
+
+    <p th:unless="${folder.archived}">
+        <a th:href="@{/g/{id}/events/new(id=${group.groupId},folderId=${folder.folderId})}"
+           class="button">+ Create event in this folder</a>
+    </p>
+
+    <th:block th:replace="~{fragments :: eventLists(${group}, ${section.upcoming()}, ${section.past()})}"></th:block>
+
+    <!-- Archive hides the folder and its events. Only an archived folder can be deleted. -->
+    <h2>Archive</h2>
+    <form th:unless="${folder.archived}" method="post"
+          th:action="@{/g/{gid}/folders/{fid}/archive(gid=${group.groupId},fid=${folder.folderId})}">
+        <button type="submit" class="secondary">Archive folder</button>
+    </form>
+    <div th:if="${folder.archived}" class="button-row">
+        <form method="post" th:action="@{/g/{gid}/folders/{fid}/restore(gid=${group.groupId},fid=${folder.folderId})}">
+            <button type="submit">Restore</button>
+        </form>
+        <a th:href="@{/g/{gid}/folders/{fid}/delete(gid=${group.groupId},fid=${folder.folderId})}"
+           class="button danger">Delete folder…</a>
+    </div>
+</main>
+</body>
+</html>

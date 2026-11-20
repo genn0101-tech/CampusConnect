@@ -5,40 +5,42 @@
 <header th:replace="~{fragments :: groupNav(${group})}"></header>
 <main>
     <h1>Events</h1>
-    <p><a th:href="@{/g/{id}/events/new(id=${group.groupId})}" class="button">+ Create event</a></p>
+    <div class="button-row">
+        <a th:href="@{/g/{id}/events/new(id=${group.groupId})}" class="button">+ Create event</a>
+        <a th:href="@{/g/{id}/folders/new(id=${group.groupId})}" class="button secondary">+ Create folder</a>
+    </div>
     <p class="result ok" th:if="${message}" th:text="${message}">Done</p>
 
-    <h2>Upcoming (<span th:text="${upcoming.size()}">0</span>)</h2>
-    <p th:if="${upcoming.isEmpty()}" class="muted">No upcoming events.</p>
-    <ul class="cards">
-        <li th:each="event : ${upcoming}">
-            <a th:replace="~{fragments :: eventCard(${group}, ${event})}"></a>
-        </li>
-    </ul>
+    <!-- One section per folder, then events without a folder (the last section, folder = null).
+         The "no folder" section is skipped when there are folders and it has no events. -->
+    <section th:each="s : ${sections}" class="folder-section"
+             th:unless="${s.folder() == null and sections.size() > 1 and s.upcoming().isEmpty() and s.past().isEmpty()}">
+        <h2 th:if="${s.folder() != null}">
+            <a th:href="@{/g/{gid}/folders/{fid}(gid=${group.groupId},fid=${s.folder().folderId})}"
+               th:text="${s.folder().name}">Weekly Meeting</a>
+        </h2>
+        <!-- The "No folder" heading is only needed when there are folders too -->
+        <h2 th:if="${s.folder() == null and sections.size() > 1}">No folder</h2>
+        <th:block th:replace="~{fragments :: eventLists(${group}, ${s.upcoming()}, ${s.past()})}"></th:block>
+    </section>
 
-    <!-- <details> is folded until tapped (no JavaScript needed) -->
-    <details class="past">
-        <summary>Past (<span th:text="${past.size()}">0</span>)</summary>
-        <p th:if="${past.isEmpty()}" class="muted">No past events.</p>
-        <ul class="cards">
-            <li th:each="event : ${past}">
-                <a th:replace="~{fragments :: eventCard(${group}, ${event})}"></a>
-            </li>
-        </ul>
-    </details>
-
-    <!-- Archived events: hidden from the lists above, shown only when this is opened -->
+    <!-- Archived folders and events: hidden from the lists above, shown only when this is opened -->
     <details class="past archived">
-        <summary>Archived (<span th:text="${archived.size()}">0</span>)</summary>
+        <summary>Archived (<span th:text="${archivedFolders.size() + archived.size()}">0</span>)</summary>
         <p class="muted small">Still counted in attendance rates and reports.</p>
-        <p th:if="${archived.isEmpty()}" class="muted">No archived events.</p>
+        <p th:if="${archivedFolders.isEmpty() and archived.isEmpty()}" class="muted">Nothing archived.</p>
         <ul class="cards">
+            <li th:each="f : ${archivedFolders}">
+                <a th:href="@{/g/{gid}/folders/{fid}(gid=${group.groupId},fid=${f.folderId})}">
+                    <strong th:text="'Folder: ' + ${f.name}">Folder: Weekly Meeting</strong>
+                    <span class="muted">Archived folder</span>
+                </a>
+            </li>
             <li th:each="event : ${archived}">
                 <a th:replace="~{fragments :: eventCard(${group}, ${event})}"></a>
             </li>
         </ul>
     </details>
-
 </main>
 </body>
 </html>

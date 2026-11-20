@@ -116,3 +116,7 @@ details.past summary { font-size: 1.2rem; font-weight: 700; cursor: pointer; pad
 .button-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .button-row form { margin: 0; }
 button.danger, .button.danger { background: #b3261e; }
+
+/* Group page: one block per folder */
+.folder-section { margin-top: 1.4em; padding-top: 0.4em; border-top: 1px solid #dde1e6; }
+.folder-section h3 { font-size: 1.05rem; margin-bottom: 0.4em; }

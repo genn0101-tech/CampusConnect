@@ -44,5 +44,26 @@
     <strong th:text="${event.eventName}">Event name</strong>
     <span class="muted" th:text="${@timeFormat.date(event.eventDate)} + ' · ' + ${event.location}">11/24/2026 · Building A</span>
 </a>
+
+<!-- Upcoming list, then Past folded. Used by the group page (per folder) and the folder page -->
+<th:block th:fragment="eventLists(group, upcoming, past)">
+    <h3>Upcoming (<span th:text="${upcoming.size()}">0</span>)</h3>
+    <p th:if="${upcoming.isEmpty()}" class="muted">No upcoming events.</p>
+    <ul class="cards">
+        <li th:each="event : ${upcoming}">
+            <a th:replace="~{fragments :: eventCard(${group}, ${event})}"></a>
+        </li>
+    </ul>
+    <!-- <details> is folded until tapped (no JavaScript needed) -->
+    <details class="past">
+        <summary>Past (<span th:text="${past.size()}">0</span>)</summary>
+        <p th:if="${past.isEmpty()}" class="muted">No past events.</p>
+        <ul class="cards">
+            <li th:each="event : ${past}">
+                <a th:replace="~{fragments :: eventCard(${group}, ${event})}"></a>
+            </li>
+        </ul>
+    </details>
+</th:block>
 </body>
 </html>

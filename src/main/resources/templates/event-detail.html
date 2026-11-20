@@ -66,6 +66,19 @@
     <h2>Funding report</h2>
     <p><a th:href="@{/g/{gid}/events/{eid}/report.csv(gid=${group.groupId},eid=${event.eventId})}" class="button">Download CSV</a></p>
 
+    <!-- Move the event into a folder, or out of it -->
+    <h2>Folder</h2>
+    <p>Now: <strong th:text="${currentFolder != null} ? ${currentFolder.name} : 'No folder'">No folder</strong></p>
+    <form th:if="${!folders.isEmpty() or currentFolder != null}" method="post" class="form inline"
+          th:action="@{/g/{gid}/events/{eid}/folder(gid=${group.groupId},eid=${event.eventId})}">
+        <select name="folderId">
+            <option value="">No folder</option>
+            <option th:each="f : ${folders}" th:value="${f.folderId}" th:text="${f.name}"
+                    th:selected="${f.folderId == event.folderId}">Weekly Meeting</option>
+        </select>
+        <button type="submit" class="secondary">Move</button>
+    </form>
+
     <!-- Archive hides the event from the lists. Only an archived event can be deleted. -->
     <h2>Archive</h2>
     <form th:unless="${event.archived}" method="post"

@@ -74,5 +74,6 @@ class DatabaseUpgradeTests {
         Event old = eventRepository.findById("EVT001").orElseThrow();
         assertEquals("Old Meeting", old.getEventName());
         assertFalse(old.isArchived()); // the new column was added empty (null = not archived)
+        assertNull(old.getFolderId()); // the new folder column too (null = no folder)
     }
 }

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Create folder')}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main class="narrow">
+    <h1>Create folder</h1>
+    <p class="muted">For example "Weekly Meeting" or "Short Meeting".</p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+
+    <form th:action="@{/g/{id}/folders(id=${group.groupId})}" method="post" class="form">
+        <label>Folder name
+            <input type="text" name="name" th:value="${name}" maxlength="40" required autofocus>
+        </label>
+        <button type="submit">Create folder</button>
+    </form>
+
+    <p class="small"><a th:href="@{/g/{id}(id=${group.groupId})}">Cancel</a></p>
+</main>
+</body>
+</html>

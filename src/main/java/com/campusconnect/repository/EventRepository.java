@@ -8,4 +8,6 @@ import java.util.List;
 public interface EventRepository extends JpaRepository<Event, String> {
 
     List<Event> findByGroupId(String groupId);
+
+    List<Event> findByFolderId(Long folderId);
 }

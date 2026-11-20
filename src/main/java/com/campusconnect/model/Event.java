@@ -20,6 +20,8 @@ public class Event {
     // true = hidden from the normal lists (still counted in attendance rates and reports).
     // Nullable so it can be added to a table that already has rows; null means "not archived".
     private Boolean archived;
+    // The folder this event is in, or null for "no folder"
+    private Long folderId;
 
     protected Event() {
     }
@@ -42,6 +44,15 @@ public class Event {
 
     public void restore() {
         this.archived = false;
+    }
+
+    public Long getFolderId() {
+        return folderId;
+    }
+
+    /** Puts the event in a folder, or takes it out with null. */
+    public void moveToFolder(Long folderId) {
+        this.folderId = folderId;
     }
 
     public String getEventId() {
