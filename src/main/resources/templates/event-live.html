@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Live · ' + ${event.eventName})}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main>
+    <h1 th:text="${event.eventName}">Event name</h1>
+    <p class="muted small">Live · updates every 30 seconds ·
+        <a th:href="@{/g/{gid}/events/{eid}(gid=${group.groupId},eid=${event.eventId})}">Event details &amp; QR</a></p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+    <p class="result ok" th:if="${message}" th:text="${message}">Done</p>
+
+    <!-- The two numbers organizers look at during the event -->
+    <div class="live-counts">
+        <div class="count">
+            <strong th:text="${hereNow}">12</strong>
+            <span>here now</span>
+        </div>
+        <div class="count">
+            <strong th:text="${totalCame}">30</strong>
+            <span>came in total</span>
+        </div>
+    </div>
+
+    <p><a th:href="@{/g/{gid}/events/{eid}/checkout-all(gid=${group.groupId},eid=${event.eventId},from='live')}"
+          class="button secondary">Check out everyone…</a></p>
+
+    <!-- People still here are listed first, then people who left -->
+    <div class="table-wrap">
+        <table class="live-table">
+            <thead>
+            <tr><th>Name</th><th>Role</th><th>In</th><th>Out</th><th>Stay</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${participants}" th:class="${p.isStillHere()} ? 'here' : 'left'">
+                <td th:text="${p.name()}">Name</td>
+                <td th:text="${p.role()}">Member</td>
+                <td th:text="${#temporals.format(p.checkInTime(), 'h:mm a')}">3:00 PM</td>
+                <td th:text="${p.checkOutTime() != null} ? ${#temporals.format(p.checkOutTime(), 'h:mm a')} : '—'">5:00 PM</td>
+                <td th:text="${p.stayMinutes() != null} ? ${p.stayMinutes()} + ' min' : 'Here'">120 min</td>
+                <td><a th:href="@{/g/{gid}/events/{eid}/attendance/{aid}/edit(gid=${group.groupId},eid=${event.eventId},aid=${p.attendanceId()},from='live')}">Edit</a></td>
+            </tr>
+            <tr th:if="${participants.isEmpty()}"><td colspan="6">Nobody has checked in yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

@@ -29,6 +29,18 @@ public class User {
         this.role = role;
     }
 
+    /**
+     * Role shown on screens and in the CSV. "Guest" is shown as "Participant",
+     * but the stored value stays "Guest" so attendance-rate rules do not change.
+     */
+    public String displayRole() {
+        return displayRole(role);
+    }
+
+    public static String displayRole(String role) {
+        return ROLE_GUEST.equals(role) ? "Participant" : role;
+    }
+
     public boolean isGuest() {
         return ROLE_GUEST.equals(role);
     }

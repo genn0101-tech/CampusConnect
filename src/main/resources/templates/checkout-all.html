@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Check out everyone')}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main class="narrow">
+    <h1>Check out everyone</h1>
+    <p class="event-name" th:text="${event.eventName}">Event name</p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+
+    <p><strong th:text="${stillHere}">12</strong> people have not checked out yet.
+        They will all get the time below (Pacific time).</p>
+
+    <form th:action="@{/g/{gid}/events/{eid}/checkout-all(gid=${group.groupId},eid=${event.eventId})}"
+          method="post" class="form">
+        <input type="hidden" name="from" th:value="${from}">
+        <label>Check-out time
+            <!-- datetime-local shows a date and time picker on phones -->
+            <input type="datetime-local" name="time" required
+                   th:value="${#temporals.format(time, 'yyyy-MM-dd''T''HH:mm')}">
+        </label>
+        <p class="small muted">People who checked in after this time are skipped.</p>
+        <button type="submit">Check out everyone</button>
+    </form>
+
+    <p class="small"><a th:href="${from == 'live'}
+            ? @{/g/{gid}/events/{eid}/live(gid=${group.groupId},eid=${event.eventId})}
+            : @{/g/{gid}/events/{eid}(gid=${group.groupId},eid=${event.eventId})}">Cancel</a></p>
+</main>
+</body>
+</html>

@@ -8,6 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title} + ' | Campus Connect'">Campus Connect</title>
     <link rel="stylesheet" th:href="@{/style.css}">
+    <!-- Only the Live page sets refreshSeconds: the browser reloads the page by itself -->
+    <meta th:if="${refreshSeconds != null}" http-equiv="refresh" th:content="${refreshSeconds}">
 </head>
 
 <body>
@@ -25,6 +27,9 @@
     <nav>
         <a th:href="@{/}" class="nav-button">Home</a>
         <a th:href="@{/g/{id}(id=${group.groupId})}" class="nav-button">Group top</a>
+        <!-- Shown only on pages of one event (detail, Live, edit): opens that event's Live page -->
+        <a th:if="${event != null}" th:href="@{/g/{gid}/events/{eid}/live(gid=${group.groupId},eid=${event.eventId})}"
+           class="nav-button live-button">Live</a>
         <a th:href="@{/g/{id}/events/new(id=${group.groupId})}">New event</a>
         <a th:href="@{/g/{id}/attendance-rate(id=${group.groupId})}">Attendance rate</a>
         <form th:action="@{/g/{id}/lock(id=${group.groupId})}" method="post" class="nav-form">

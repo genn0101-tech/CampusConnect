@@ -10,6 +10,10 @@
         <span th:text="${event.eventDate}">2026-03-26</span> ·
         <span th:text="${event.location}">Building A</span>
     </p>
+    <p><a th:href="@{/g/{gid}/events/{eid}/live(gid=${group.groupId},eid=${event.eventId})}" class="button live-button">Live view</a></p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+    <p class="result ok" th:if="${message}" th:text="${message}">Done</p>
 
     <!-- Two QR codes: print them and put check-in at the entrance, check-out at the exit -->
     <div class="qr-pair">
@@ -34,11 +38,13 @@
         <strong th:text="${averageStay != null} ? ${#numbers.formatDecimal(averageStay, 1, 1)} + ' min' : '—'">90.0 min</strong>
         <span class="muted small">(people who checked out)</span>
     </p>
+    <p><a th:href="@{/g/{gid}/events/{eid}/checkout-all(gid=${group.groupId},eid=${event.eventId})}"
+          class="button secondary">Check out everyone…</a></p>
 
     <div class="table-wrap">
         <table>
             <thead>
-            <tr><th>Name</th><th>Role</th><th>In</th><th>Out</th><th>Stay</th></tr>
+            <tr><th>Name</th><th>Role</th><th>In</th><th>Out</th><th>Stay</th><th>Out by</th><th></th></tr>
             </thead>
             <tbody>
             <tr th:each="p : ${participants}">
@@ -47,8 +53,10 @@
                 <td th:text="${#temporals.format(p.checkInTime(), 'HH:mm')}">15:00</td>
                 <td th:text="${p.checkOutTime() != null} ? ${#temporals.format(p.checkOutTime(), 'HH:mm')} : '—'">17:00</td>
                 <td th:text="${p.stayMinutes() != null} ? ${p.stayMinutes()} + ' min' : 'Still here'">120 min</td>
+                <td th:text="${p.checkoutSource()}">QR</td>
+                <td><a th:href="@{/g/{gid}/events/{eid}/attendance/{aid}/edit(gid=${group.groupId},eid=${event.eventId},aid=${p.attendanceId()})}">Edit</a></td>
             </tr>
-            <tr th:if="${participants.isEmpty()}"><td colspan="5">Nobody has checked in yet.</td></tr>
+            <tr th:if="${participants.isEmpty()}"><td colspan="7">Nobody has checked in yet.</td></tr>
             </tbody>
         </table>
     </div>

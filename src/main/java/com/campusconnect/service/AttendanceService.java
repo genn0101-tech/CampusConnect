@@ -6,7 +6,10 @@ import com.campusconnect.model.User;
 import com.campusconnect.repository.AttendanceRepository;
 import com.campusconnect.repository.EventRepository;
 import com.campusconnect.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -15,10 +18,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
-/** Check-in / check-out, guest registration, stay duration and attendance rate. */
+/** Check-in / check-out, guest registration, time fixes, stay duration and attendance rate. */
 @Service
 public class AttendanceService {
 
@@ -26,6 +30,12 @@ public class AttendanceService {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final Clock clock;
+
+    private static final int MAX_CANDIDATES = 5;
+
+    /** Result of "check out everyone": how many were checked out, how many were skipped. */
+    public record BulkCheckoutResult(int checkedOut, int skipped) {
+    }
 
     public AttendanceService(AttendanceRepository attendanceRepository, UserRepository userRepository,
                              EventRepository eventRepository, Clock clock) {
@@ -56,6 +66,103 @@ public class AttendanceService {
         return attendanceRepository.save(attendance);
     }
 
+    // ---------- Check-out by name ----------
+
+    /**
+     * Names (only names) of people at this event who have not checked out and whose name
+     * contains the typed text. At most 5, so the list cannot be used to read everyone at once.
+     */
+    public List<String> checkoutCandidates(String eventId, String typed) {
+        String query = typed.trim().toLowerCase(Locale.ROOT);
+        List<String> names = new ArrayList<>();
+        for (ParticipantRow row : participants(eventId)) {
+            if (row.isStillHere() && row.name().toLowerCase(Locale.ROOT).contains(query)
+                    && !names.contains(row.name())) {
+                names.add(row.name());
+            }
+        }
+        names.sort(String::compareToIgnoreCase);
+        return names.size() > MAX_CANDIDATES ? names.subList(0, MAX_CANDIDATES) : names;
+    }
+
+    /** People still at the event with exactly this name (ignoring upper/lower case). */
+    public List<Attendance> stillHereWithName(String eventId, String name) {
+        List<Attendance> matches = new ArrayList<>();
+        for (Attendance a : attendanceRepository.findByEventId(eventId)) {
+            Optional<User> user = userRepository.findById(a.getStudentId());
+            if (!a.isCheckedOut() && user.isPresent() && user.get().getName().equalsIgnoreCase(name.trim())) {
+                matches.add(a);
+            }
+        }
+        return matches;
+    }
+
+    // ---------- Changes by the group (owner) ----------
+
+    /** Finds one attendance row, or "404 Not Found" if it does not belong to this event. */
+    public Attendance getAttendanceInEvent(Long attendanceId, String eventId) {
+        Attendance attendance = attendanceRepository.findById(attendanceId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Attendance not found"));
+        if (!attendance.getEventId().equals(eventId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Attendance not found");
+        }
+        return attendance;
+    }
+
+    /**
+     * Gives everyone who has not checked out the same check-out time.
+     * People who checked in after that time are skipped (their stay would be negative).
+     * @Transactional: all rows are saved together, or none if something fails.
+     */
+    @Transactional
+    public BulkCheckoutResult checkOutEveryone(String eventId, LocalDateTime time) {
+        int checkedOut = 0;
+        int skipped = 0;
+        for (Attendance a : attendanceRepository.findByEventId(eventId)) {
+            if (a.isCheckedOut()) {
+                continue;
+            }
+            if (time.isBefore(a.getCheckInTime())) {
+                skipped++;
+            } else {
+                a.setCheckOutByOwner(time);
+                attendanceRepository.save(a);
+                checkedOut++;
+            }
+        }
+        return new BulkCheckoutResult(checkedOut, skipped);
+    }
+
+    /**
+     * Fixes one row's times. checkOut may be null ("still here").
+     * Returns an error message, or null if the change was saved.
+     */
+    public String updateTimes(Attendance attendance, LocalDateTime checkIn, LocalDateTime checkOut) {
+        if (checkIn == null) {
+            return "Check-in time is required.";
+        }
+        if (checkOut != null && checkOut.isBefore(checkIn)) {
+            return "Check-out cannot be before check-in.";
+        }
+        attendance.setCheckInTime(checkIn);
+        // Only a changed check-out counts as "entered by the owner" (a check-in fix keeps QR)
+        boolean checkOutChanged = (checkOut == null)
+                ? attendance.getCheckOutTime() != null
+                : !checkOut.equals(attendance.getCheckOutTime());
+        if (checkOutChanged) {
+            attendance.setCheckOutByOwner(checkOut);
+        }
+        attendanceRepository.save(attendance);
+        return null;
+    }
+
+    /** Current time in Pacific time, without seconds. Used as the default in forms. */
+    public LocalDateTime currentTime() {
+        return now();
+    }
+
+    // ---------- Guest registration ----------
+
     /** Registers a first-time visitor as a Guest of the event's group. */
     public User registerGuest(String studentId, String name, String email, String groupId) {
         User guest = new User(studentId, name, email, groupId, User.ROLE_GUEST);
@@ -72,12 +179,28 @@ public class AttendanceService {
             Optional<User> user = userRepository.findById(a.getStudentId());
             String name = user.map(User::getName).orElse("(unknown)");
             String email = user.map(User::getEmail).orElse("");
-            String role = user.map(User::getRole).orElse("");
-            rows.add(new ParticipantRow(a.getStudentId(), name, email, role,
-                    a.getCheckInTime(), a.getCheckOutTime(), a.stayMinutes()));
+            String role = user.map(User::displayRole).orElse("");
+            rows.add(new ParticipantRow(a.getId(), a.getStudentId(), name, email, role,
+                    a.getCheckInTime(), a.getCheckOutTime(), a.stayMinutes(), a.checkoutSourceLabel()));
         }
         rows.sort(Comparator.comparing(ParticipantRow::checkInTime));
         return rows;
+    }
+
+    /** For the Live page: people still here first (by check-in), then people who left (latest first). */
+    public List<ParticipantRow> liveOrder(List<ParticipantRow> rows) {
+        List<ParticipantRow> here = new ArrayList<>();
+        List<ParticipantRow> left = new ArrayList<>();
+        for (ParticipantRow row : rows) {
+            if (row.isStillHere()) {
+                here.add(row);
+            } else {
+                left.add(row);
+            }
+        }
+        left.sort(Comparator.comparing(ParticipantRow::checkOutTime).reversed());
+        here.addAll(left);
+        return here;
     }
 
     /** Average stay in minutes of people who already checked out. Returns null if nobody has. */

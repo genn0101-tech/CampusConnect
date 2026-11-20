@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Fix times')}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main class="narrow">
+    <h1>Fix times</h1>
+    <p class="event-name" th:text="${event.eventName}">Event name</p>
+    <p th:text="${user != null} ? ${user.name} + ' (' + ${user.displayRole()} + ')' : ${attendance.studentId}">Name (Member)</p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+
+    <form th:action="@{/g/{gid}/events/{eid}/attendance/{aid}/edit(gid=${group.groupId},eid=${event.eventId},aid=${attendance.id})}"
+          method="post" class="form">
+        <input type="hidden" name="from" th:value="${from}">
+        <label>Check-in time
+            <input type="datetime-local" name="checkIn" required
+                   th:value="${#temporals.format(checkIn, 'yyyy-MM-dd''T''HH:mm')}">
+        </label>
+        <label>Check-out time
+            <input type="datetime-local" name="checkOut"
+                   th:value="${checkOut != null} ? ${#temporals.format(checkOut, 'yyyy-MM-dd''T''HH:mm')} : ''">
+        </label>
+        <p class="small muted">Times are Pacific time. Leave check-out empty if the person is still here.
+            A changed check-out is saved as "entered by the group" (Out by: Owner).</p>
+        <button type="submit">Save</button>
+    </form>
+
+    <p class="small"><a th:href="${from == 'live'}
+            ? @{/g/{gid}/events/{eid}/live(gid=${group.groupId},eid=${event.eventId})}
+            : @{/g/{gid}/events/{eid}(gid=${group.groupId},eid=${event.eventId})}">Cancel</a></p>
+</main>
+</body>
+</html>

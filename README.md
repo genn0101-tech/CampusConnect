@@ -20,10 +20,15 @@ Campus Connect also records when people leave, how long they stayed, and how oft
   New groups can only be created by people who know the group creation code.
 - **Event creation**: an unlocked group can create events (name, date, location).
 - **QR check-in and check-out**: each event has two QR codes, one for the entrance and one for the exit.
-- **Guest registration**: a first-time Student ID is asked for a name and email once, then checked in.
+  At the exit, people can check out with their Student ID or by picking their name from a short list.
+- **Live view**: during the event, shows how many people are here now and in total, refreshed every 30 seconds.
+- **Owner fixes**: check out everyone still there at a chosen time, or fix one person's times.
+  The report shows whether each check-out was by QR or entered by the group.
+- **Participant registration**: a first-time Student ID is asked for a name and email once, then checked in.
 - **Stay duration**: minutes between check-in and check-out, plus the average for each event.
 - **Attendance rate**: for each member, events attended out of all events held by the group.
-- **Funding report**: download an event's attendance as a CSV file (opens correctly in Excel).
+- **Funding report**: download an event's attendance as a CSV file. Dates, times (US style, Pacific time)
+  and Student IDs are kept as text, so Excel shows them correctly.
 - **Developer page**: see every group and reset a group passphrase that was forgotten.
 - **Privacy note**: the check-in page states which group the data is collected for.
 
@@ -84,6 +89,9 @@ It starts with an empty database and refuses to start unless these environment v
 - **No login system.** Access is "this browser knows the group passphrase", not user accounts.
 - **No limit on passphrase attempts.** BCrypt makes each attempt slow, but repeated guessing is not blocked.
 - **No CSRF protection.** Forms do not include CSRF tokens yet.
+- **Check-out by name is open to anyone at the event page.** On the event day, typing 2+ letters shows
+  up to 5 names of people still there, and anyone who knows a name can check that person out.
+  The group can fix wrong times afterwards (shown as "Out by: Owner").
 - **Free hosting sleeps.** On Render's free plan the app stops after 15 minutes without visitors,
   and the first visit afterwards takes about a minute. Open the site a few minutes before an event.
 - **Free database expires.** Render's free PostgreSQL stops working 30 days after it is created,

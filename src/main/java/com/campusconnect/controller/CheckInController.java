@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.List;
 import java.util.Optional;
 
 /** The pages students open on their phone after scanning the QR code. */
@@ -21,6 +23,8 @@ public class CheckInController {
 
     // StudentID: 1-20 letters or digits (kept loose on purpose so nobody is blocked at the door)
     private static final String STUDENT_ID_PATTERN = "[A-Za-z0-9]{1,20}";
+    // Name suggestions start after this many typed characters
+    private static final int MIN_NAME_QUERY = 2;
 
     private final EventService eventService;
     private final AttendanceService attendanceService;
@@ -120,13 +124,71 @@ public class CheckInController {
 
     @GetMapping("/events/{eventId}/checkout")
     public String checkOutForm(@PathVariable String eventId, Model model) {
-        addEvent(eventId, model);
+        addCheckoutPage(eventId, model);
         return "checkout";
+    }
+
+    /** Like addEvent, plus whether "check out by name" is open (only on the event day). */
+    private Event addCheckoutPage(String eventId, Model model) {
+        Event event = addEvent(eventId, model);
+        model.addAttribute("nameCheckout", isEventDay(event));
+        return event;
+    }
+
+    /** The checkout page is public, so names are only suggested on the day of the event. */
+    private boolean isEventDay(Event event) {
+        return event.getEventDate().equals(attendanceService.currentTime().toLocalDate());
+    }
+
+    /**
+     * Name suggestions for the checkout page (JSON list of names, nothing else).
+     * Only people still at the event, at most 5, and only on the event day.
+     */
+    @GetMapping("/events/{eventId}/checkout/candidates")
+    @ResponseBody
+    public List<String> checkoutCandidates(@PathVariable String eventId, @RequestParam String q) {
+        Event event = eventService.getEvent(eventId);
+        if (!isEventDay(event) || q.trim().length() < MIN_NAME_QUERY) {
+            return List.of();
+        }
+        return attendanceService.checkoutCandidates(eventId, q);
+    }
+
+    @PostMapping("/events/{eventId}/checkout/name")
+    public String checkOutByName(@PathVariable String eventId,
+                                 @RequestParam String name,
+                                 @RequestParam(required = false) String studentId,
+                                 Model model) {
+        Event event = addCheckoutPage(eventId, model);
+        if (!isEventDay(event)) {
+            model.addAttribute("error", "Check-out by name is only open on the event day. Please use your Student ID.");
+            return "checkout";
+        }
+
+        List<Attendance> matches = attendanceService.stillHereWithName(eventId, name);
+        if (matches.isEmpty()) {
+            model.addAttribute("error", "Nobody with this name is checked in. Please pick a name from the list or use your Student ID.");
+            return "checkout";
+        }
+        if (matches.size() > 1) {
+            // Same name twice: the Student ID decides who is checking out
+            for (Attendance match : matches) {
+                if (studentId != null && match.getStudentId().equals(studentId.trim())) {
+                    return finishCheckOut(match, model);
+                }
+            }
+            model.addAttribute("sameName", name.trim());
+            if (studentId != null) {
+                model.addAttribute("error", "That Student ID does not match anyone with this name.");
+            }
+            return "checkout";
+        }
+        return finishCheckOut(matches.get(0), model);
     }
 
     @PostMapping("/events/{eventId}/checkout")
     public String checkOut(@PathVariable String eventId, @RequestParam String studentId, Model model) {
-        Event event = addEvent(eventId, model);
+        addCheckoutPage(eventId, model);
         studentId = studentId.trim();
 
         Optional<Attendance> attendance = attendanceService.findAttendance(eventId, studentId);
@@ -134,16 +196,20 @@ public class CheckInController {
             model.addAttribute("error", "No check-in found for this Student ID at this event.");
             return "checkout";
         }
+        return finishCheckOut(attendance.get(), model);
+    }
 
-        model.addAttribute("user", attendanceService.findUser(studentId).orElse(null));
-        if (attendance.get().isCheckedOut()) {
+    /** Shared last step of both check-out paths (Student ID and name). */
+    private String finishCheckOut(Attendance attendance, Model model) {
+        model.addAttribute("user", attendanceService.findUser(attendance.getStudentId()).orElse(null));
+        if (attendance.isCheckedOut()) {
             model.addAttribute("success", false);
             model.addAttribute("message", "You already checked out.");
-            model.addAttribute("attendance", attendance.get());
+            model.addAttribute("attendance", attendance);
         } else {
             model.addAttribute("success", true);
             model.addAttribute("message", "Checked out. Thank you for coming!");
-            model.addAttribute("attendance", attendanceService.checkOut(attendance.get()));
+            model.addAttribute("attendance", attendanceService.checkOut(attendance));
         }
         return "result";
     }

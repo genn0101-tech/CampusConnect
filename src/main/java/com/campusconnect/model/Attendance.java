@@ -19,6 +19,9 @@ import java.time.LocalDateTime;
         uniqueConstraints = @UniqueConstraint(columnNames = {"eventId", "studentId"})) // one record per student per event
 public class Attendance {
 
+    public static final String SOURCE_SELF = "SELF";
+    public static final String SOURCE_OWNER = "OWNER";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // the database assigns 1, 2, 3, ...
     private Long id;
@@ -26,6 +29,10 @@ public class Attendance {
     private String studentId;
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime; // null until the student checks out
+    // Who recorded the check-out: SOURCE_SELF (the student, by QR) or SOURCE_OWNER (typed or fixed by the group).
+    // Nullable on purpose: adding a NOT NULL column to a table that already has rows would fail.
+    // Rows from before this column existed have null; back then only QR check-out existed.
+    private String checkoutSource;
 
     protected Attendance() {
     }
@@ -37,8 +44,29 @@ public class Attendance {
         this.checkOutTime = checkOutTime;
     }
 
+    /** Check-out by the student (QR page). */
     public void checkOut(LocalDateTime time) {
         this.checkOutTime = time;
+        this.checkoutSource = SOURCE_SELF;
+    }
+
+    /** Check-out time typed or fixed by the group. null = "still here" again. */
+    public void setCheckOutByOwner(LocalDateTime time) {
+        this.checkOutTime = time;
+        this.checkoutSource = (time == null) ? null : SOURCE_OWNER;
+    }
+
+    /** Check-in time fixed by the group. Does not change who recorded the check-out. */
+    public void setCheckInTime(LocalDateTime time) {
+        this.checkInTime = time;
+    }
+
+    /** Label for the participant list and CSV: "QR", "Owner", or "" if not checked out. */
+    public String checkoutSourceLabel() {
+        if (checkOutTime == null) {
+            return "";
+        }
+        return SOURCE_OWNER.equals(checkoutSource) ? "Owner" : "QR"; // null = old QR check-out
     }
 
     public boolean isCheckedOut() {
@@ -71,5 +99,9 @@ public class Attendance {
 
     public LocalDateTime getCheckOutTime() {
         return checkOutTime;
+    }
+
+    public String getCheckoutSource() {
+        return checkoutSource;
     }
 }

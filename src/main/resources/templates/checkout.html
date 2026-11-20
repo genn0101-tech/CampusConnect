@@ -9,14 +9,41 @@
 
     <p class="error" th:if="${error}" th:text="${error}">Error</p>
 
-    <form th:action="@{/events/{id}/checkout(id=${event.eventId})}" method="post" class="form">
+    <!-- Two people with the same name: ask only them for the Student ID -->
+    <form th:if="${sameName}" th:action="@{/events/{id}/checkout/name(id=${event.eventId})}" method="post" class="form">
+        <p>More than one person named <strong th:text="${sameName}">Name</strong> is here.
+            Please enter your Student ID.</p>
+        <input type="hidden" name="name" th:value="${sameName}">
         <label>Student ID
             <input type="text" name="studentId" inputmode="numeric" autocomplete="off" required autofocus>
         </label>
         <button type="submit">Check out</button>
     </form>
 
+    <th:block th:unless="${sameName}">
+        <!-- Check out by name: type 2+ letters, then tap your name (event day only) -->
+        <form th:if="${nameCheckout}" id="name-form" th:action="@{/events/{id}/checkout/name(id=${event.eventId})}"
+              method="post" class="form"
+              th:attr="data-candidates-url=@{/events/{id}/checkout/candidates(id=${event.eventId})}">
+            <label>Your name
+                <input type="text" id="name-input" name="name" autocomplete="off" required autofocus>
+            </label>
+            <ul id="name-candidates" class="candidates"></ul>
+            <p class="small muted" id="name-hint">Type at least 2 letters, then tap your name.</p>
+        </form>
+
+        <p th:if="${nameCheckout}" class="muted or">or</p>
+
+        <form th:action="@{/events/{id}/checkout(id=${event.eventId})}" method="post" class="form">
+            <label>Student ID
+                <input type="text" name="studentId" inputmode="numeric" autocomplete="off" required>
+            </label>
+            <button type="submit">Check out with Student ID</button>
+        </form>
+    </th:block>
+
     <p class="small">Just arrived? <a th:href="@{/events/{id}/checkin(id=${event.eventId})}">Check in here</a></p>
 </main>
+<script th:if="${nameCheckout}" th:src="@{/checkout.js}"></script>
 </body>
 </html>

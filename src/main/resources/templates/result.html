@@ -7,7 +7,7 @@
     <!-- Green box on success, yellow box on "already done" -->
     <div th:class="${success} ? 'result ok' : 'result warn'">
         <h1 th:text="${message}">Checked in.</h1>
-        <p th:if="${user != null}" th:text="${user.name} + ' (' + ${user.role} + ')'">Name (Member)</p>
+        <p th:if="${user != null}" th:text="${user.name} + ' (' + ${user.displayRole()} + ')'">Name (Member)</p>
     </div>
 
     <p class="event-name" th:text="${event.eventName}">Event name</p>
@@ -19,7 +19,7 @@
 
     <!-- After checking in, the next thing the student needs is the check-out page -->
     <p th:if="${attendance.checkOutTime == null}">
-        When you leave, scan the QR code again and tap
+        When you leave, scan the exit QR code or tap
         <a th:href="@{/events/{id}/checkout(id=${event.eventId})}">Check out</a>.
     </p>
 </main>
