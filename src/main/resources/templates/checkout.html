@@ -28,16 +28,21 @@
             <label>Your name
                 <input type="text" id="name-input" name="name" autocomplete="off" required autofocus>
             </label>
+            <!-- Filled only when a name is picked from the Student ID suggestions below -->
+            <input type="hidden" id="id-prefix" name="idPrefix" value="">
             <ul id="name-candidates" class="candidates"></ul>
-            <p class="small muted" id="name-hint">Type at least 2 letters, then tap your name.</p>
+            <p class="small muted">Type at least 2 letters, then tap your name.</p>
         </form>
 
         <p th:if="${nameCheckout}" class="muted or">or</p>
 
         <form th:action="@{/events/{id}/checkout(id=${event.eventId})}" method="post" class="form">
             <label>Student ID
-                <input type="text" name="studentId" inputmode="numeric" autocomplete="off" required>
+                <input type="text" id="id-input" name="studentId" inputmode="numeric" autocomplete="off" required>
             </label>
+            <!-- Suggestions show names only, never Student IDs (event day only) -->
+            <ul th:if="${nameCheckout}" id="id-candidates" class="candidates"></ul>
+            <p th:if="${nameCheckout}" class="small muted">After 4 digits, your name appears. Tap it, or finish typing.</p>
             <button type="submit">Check out with Student ID</button>
         </form>
     </th:block>

@@ -23,8 +23,9 @@ public class CheckInController {
 
     // StudentID: 1-20 letters or digits (kept loose on purpose so nobody is blocked at the door)
     private static final String STUDENT_ID_PATTERN = "[A-Za-z0-9]{1,20}";
-    // Name suggestions start after this many typed characters
+    // Suggestions start after this many typed characters (name) or digits (Student ID)
     private static final int MIN_NAME_QUERY = 2;
+    private static final int MIN_ID_QUERY = 4;
 
     private final EventService eventService;
     private final AttendanceService attendanceService;
@@ -141,14 +142,27 @@ public class CheckInController {
     }
 
     /**
-     * Name suggestions for the checkout page (JSON list of names, nothing else).
+     * Suggestions for the checkout page: a JSON list of names, nothing else.
+     * q = part of a name (2+ letters), id = start of a Student ID (4+ characters).
      * Only people still at the event, at most 5, and only on the event day.
      */
     @GetMapping("/events/{eventId}/checkout/candidates")
     @ResponseBody
-    public List<String> checkoutCandidates(@PathVariable String eventId, @RequestParam String q) {
+    public List<String> checkoutCandidates(@PathVariable String eventId,
+                                           @RequestParam(defaultValue = "") String q,
+                                           @RequestParam(defaultValue = "") String id) {
         Event event = eventService.getEvent(eventId);
-        if (!isEventDay(event) || q.trim().length() < MIN_NAME_QUERY) {
+        if (!isEventDay(event)) {
+            return List.of();
+        }
+        if (!id.isBlank()) {
+            String typedId = id.trim();
+            if (typedId.length() < MIN_ID_QUERY || !typedId.matches(STUDENT_ID_PATTERN)) {
+                return List.of();
+            }
+            return attendanceService.checkoutCandidatesById(eventId, typedId);
+        }
+        if (q.trim().length() < MIN_NAME_QUERY) {
             return List.of();
         }
         return attendanceService.checkoutCandidates(eventId, q);
@@ -158,6 +172,7 @@ public class CheckInController {
     public String checkOutByName(@PathVariable String eventId,
                                  @RequestParam String name,
                                  @RequestParam(required = false) String studentId,
+                                 @RequestParam(defaultValue = "") String idPrefix,
                                  Model model) {
         Event event = addCheckoutPage(eventId, model);
         if (!isEventDay(event)) {
@@ -166,6 +181,11 @@ public class CheckInController {
         }
 
         List<Attendance> matches = attendanceService.stillHereWithName(eventId, name);
+        // Picked from the Student ID suggestions: keep only people whose ID starts with the typed digits,
+        // so two people with the same name are told apart without asking again
+        if (!idPrefix.isBlank()) {
+            matches.removeIf(match -> !match.getStudentId().startsWith(idPrefix.trim()));
+        }
         if (matches.isEmpty()) {
             model.addAttribute("error", "Nobody with this name is checked in. Please pick a name from the list or use your Student ID.");
             return "checkout";

@@ -103,6 +103,7 @@ public class EventController {
     public ResponseEntity<byte[]> downloadReport(@PathVariable String groupId, @PathVariable String eventId,
                                                  HttpSession session) throws IOException {
         requireUnlocked(session, groupId);
+        Group group = groupService.getGroup(groupId);
         Event event = eventService.getEventInGroup(eventId, groupId);
 
         List<ParticipantRow> participants = attendanceService.participants(eventId);
@@ -117,7 +118,7 @@ public class EventController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + eventId + "-attendance.csv\"")
+                        reportService.contentDisposition(reportService.fileName(group, event)))
                 .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
                 .body(body.toByteArray());
     }

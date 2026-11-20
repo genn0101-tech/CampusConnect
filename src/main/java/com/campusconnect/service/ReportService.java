@@ -1,8 +1,11 @@
 package com.campusconnect.service;
 
 import com.campusconnect.model.Event;
+import com.campusconnect.model.Group;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -43,6 +46,35 @@ public class ReportService {
                 .append(averageStayMinutes == null ? "" : String.format("%.1f", averageStayMinutes))
                 .append('\n');
         return csv.toString();
+    }
+
+    /**
+     * File name like ISA_Weekly-Meeting_2026-11-25_attendance.csv.
+     * Spaces become "-", and characters Windows does not allow in file names are removed.
+     */
+    public String fileName(Group group, Event event) {
+        return cleanForFileName(group.getGroupName(), "group") + "_"
+                + cleanForFileName(event.getEventName(), "event") + "_"
+                + event.getEventDate() + "_attendance.csv"; // LocalDate prints as yyyy-MM-dd
+    }
+
+    /**
+     * The Content-Disposition header that makes the browser download the file with this name.
+     * filename*=UTF-8''... carries the real name (also Japanese) in UTF-8 (RFC 6266),
+     * filename="..." is an English-only fallback for very old browsers.
+     */
+    public String contentDisposition(String fileName) {
+        String asciiFallback = fileName.replaceAll("[^\\x20-\\x7E]", "_"); // non-English letters -> _
+        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        return "attachment; filename=\"" + asciiFallback + "\"; filename*=UTF-8''" + encoded;
+    }
+
+    private String cleanForFileName(String text, String fallback) {
+        String cleaned = text.trim()
+                .replaceAll("[/\\\\:*?\"<>|]", "") // remove / \ : * ? " < > |
+                .replaceAll("\\p{Cntrl}", "")      // remove invisible control characters
+                .replaceAll("\\s+", "-");          // spaces -> "-"
+        return cleaned.isEmpty() ? fallback : cleaned;
     }
 
     private String format(LocalDate date) {

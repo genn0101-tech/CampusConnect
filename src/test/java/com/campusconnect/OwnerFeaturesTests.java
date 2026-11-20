@@ -2,6 +2,7 @@ package com.campusconnect;
 
 import com.campusconnect.model.Attendance;
 import com.campusconnect.model.Event;
+import com.campusconnect.model.Group;
 import com.campusconnect.model.User;
 import com.campusconnect.repository.AttendanceRepository;
 import com.campusconnect.repository.EventRepository;
@@ -13,11 +14,14 @@ import com.campusconnect.service.ReportService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.LocaleResolver;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,6 +48,8 @@ class OwnerFeaturesTests {
     private UserRepository userRepository;
     @Autowired
     private AttendanceRepository attendanceRepository;
+    @Autowired
+    private LocaleResolver localeResolver;
 
     /** Saves a user and their check-in at the test event. */
     private Attendance checkedIn(String studentId, String name, LocalDateTime checkIn) {
@@ -189,5 +195,46 @@ class OwnerFeaturesTests {
         assertTrue(csv.contains(",35,Owner\n"));
         // A name that looks like a formula gets a leading ' so Excel does not run it
         assertTrue(csv.contains("\"'=HYPERLINK(\"\"x\"\")\""));
+    }
+
+    @Test
+    void studentIdSuggestionsShowOnlyNames() {
+        createEvent();
+        checkedIn("90012345", "Ana Lopez", SIX_PM);
+        checkedIn("90012399", "Ben Ortiz", SIX_PM);
+        Attendance left = checkedIn("90012300", "Cara Diaz", SIX_PM);
+        attendanceService.checkOut(left); // already left: not suggested
+        checkedIn("80012345", "Dan Wu", SIX_PM);
+
+        // Start of the Student ID, and the result is names only
+        assertEquals(List.of("Ana Lopez", "Ben Ortiz"), attendanceService.checkoutCandidatesById(EVENT, "9001"));
+        assertEquals(List.of("Ana Lopez"), attendanceService.checkoutCandidatesById(EVENT, "9001234"));
+        assertEquals(List.of(), attendanceService.checkoutCandidatesById(EVENT, "7777"));
+    }
+
+    @Test
+    void csvFileNameIsReadable() {
+        Group isa = new Group("ISA", "ISA", "");
+        Event meeting = new Event(EVENT, "Weekly Meeting", LocalDate.of(2026, 11, 25), "Room 1", "ISA");
+        assertEquals("ISA_Weekly-Meeting_2026-11-25_attendance.csv", reportService.fileName(isa, meeting));
+
+        // Spaces -> "-", and / \ : * ? " < > | are removed
+        Event messy = new Event(EVENT, "Q&A: Night / Part 2?", LocalDate.of(2026, 11, 24), "", "ISA");
+        assertEquals("ISA_Q&A-Night-Part-2_2026-11-24_attendance.csv", reportService.fileName(isa, messy));
+
+        // Japanese names stay in the real name (UTF-8) and become _ only in the old-browser fallback
+        Group japanese = new Group("JapaneseClub", "日本語クラブ", "");
+        String name = reportService.fileName(japanese, meeting);
+        assertEquals("日本語クラブ_Weekly-Meeting_2026-11-25_attendance.csv", name);
+        String header = reportService.contentDisposition(name);
+        assertTrue(header.startsWith("attachment; filename=\"_______Weekly-Meeting_2026-11-25_attendance.csv\""));
+        assertTrue(header.contains("filename*=UTF-8''%E6%97%A5%E6%9C%AC%E8%AA%9E"));
+    }
+
+    @Test
+    void timesAreEnglishEvenForJapaneseBrowsers() {
+        MockHttpServletRequest japaneseBrowser = new MockHttpServletRequest();
+        japaneseBrowser.addHeader("Accept-Language", "ja-JP");
+        assertEquals(Locale.US, localeResolver.resolveLocale(japaneseBrowser));
     }
 }

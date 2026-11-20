@@ -85,6 +85,22 @@ public class AttendanceService {
         return names.size() > MAX_CANDIDATES ? names.subList(0, MAX_CANDIDATES) : names;
     }
 
+    /**
+     * Names (never Student IDs) of people still at this event whose Student ID starts with the typed digits.
+     * Only names are returned, so nobody can collect other people's Student IDs from this list.
+     */
+    public List<String> checkoutCandidatesById(String eventId, String typedId) {
+        String prefix = typedId.trim();
+        List<String> names = new ArrayList<>();
+        for (ParticipantRow row : participants(eventId)) {
+            if (row.isStillHere() && row.studentId().startsWith(prefix) && !names.contains(row.name())) {
+                names.add(row.name());
+            }
+        }
+        names.sort(String::compareToIgnoreCase);
+        return names.size() > MAX_CANDIDATES ? names.subList(0, MAX_CANDIDATES) : names;
+    }
+
     /** People still at the event with exactly this name (ignoring upper/lower case). */
     public List<Attendance> stillHereWithName(String eventId, String name) {
         List<Attendance> matches = new ArrayList<>();
