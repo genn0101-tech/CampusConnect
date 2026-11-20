@@ -1,7 +1,9 @@
 package com.campusconnect;
 
 import com.campusconnect.model.Attendance;
+import com.campusconnect.model.Event;
 import com.campusconnect.repository.AttendanceRepository;
+import com.campusconnect.repository.EventRepository;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,11 +16,12 @@ import java.sql.Statement;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Simulates the production database: an attendance table from BEFORE the checkout_source column,
- * already holding data. The app must start, add the column, and keep the old row.
+ * Simulates the production database: attendance and events tables from BEFORE the
+ * checkout_source and archived columns, already holding data. The app must start, add the column, and keep the old row.
  * (Uses H2 instead of PostgreSQL, so it checks the idea, not PostgreSQL itself.)
  */
 @SpringBootTest(properties = {
@@ -36,6 +39,8 @@ class DatabaseUpgradeTests {
 
     @Autowired
     private AttendanceRepository attendanceRepository;
+    @Autowired
+    private EventRepository eventRepository;
 
     /** Runs before Spring starts: creates the old table (same columns as before this change). */
     @BeforeAll
@@ -48,6 +53,9 @@ class DatabaseUpgradeTests {
                     + "UNIQUE (event_id, student_id))");
             sql.execute("INSERT INTO attendance (event_id, student_id, check_in_time, check_out_time) "
                     + "VALUES ('EVT001', '123', TIMESTAMP '2026-11-19 18:00:00', TIMESTAMP '2026-11-19 20:00:00')");
+            sql.execute("CREATE TABLE events (event_id VARCHAR(255) PRIMARY KEY, event_name VARCHAR(255), "
+                    + "event_date DATE, location VARCHAR(255), group_id VARCHAR(255))");
+            sql.execute("INSERT INTO events VALUES ('EVT001', 'Old Meeting', DATE '2026-11-19', 'Gym', 'ISA')");
         }
     }
 
@@ -59,5 +67,12 @@ class DatabaseUpgradeTests {
         assertEquals(120L, old.stayMinutes());
         assertNull(old.getCheckoutSource()); // the new column was added empty
         assertEquals("QR", old.checkoutSourceLabel());
+    }
+
+    @Test
+    void oldEventSurvivesAndIsNotArchived() {
+        Event old = eventRepository.findById("EVT001").orElseThrow();
+        assertEquals("Old Meeting", old.getEventName());
+        assertFalse(old.isArchived()); // the new column was added empty (null = not archived)
     }
 }

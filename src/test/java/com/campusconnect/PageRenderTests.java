@@ -64,6 +64,22 @@ class PageRenderTests {
     }
 
     @Test
+    void archiveAndDeletePagesOpen() throws Exception {
+        // A new event of its own, so the sample data used by other tests stays as it is
+        HttpResponse<String> created = post("/g/GRIT/events", "eventName=Page+Test&eventDate=2026-12-24&location=Gym");
+        String eventUrl = created.headers().firstValue("Location").orElseThrow().replace(base, "");
+
+        assertEquals(302, post(eventUrl + "/archive", "").statusCode());
+        assertTrue(get(eventUrl).body().contains("Archived: hidden"));
+        assertTrue(get("/g/GRIT").body().contains("Archived ("));
+        HttpResponse<String> confirm = get(eventUrl + "/delete");
+        assertEquals(200, confirm.statusCode());
+        assertTrue(confirm.body().contains("cannot be undone"));
+        assertEquals(302, post(eventUrl + "/delete", "").statusCode());
+        assertEquals(404, get(eventUrl).statusCode());
+    }
+
+    @Test
     void checkInAndCheckOutPagesOpen() throws Exception {
         assertEquals(200, get("/events/EVT003/checkin").statusCode());
         assertEquals(200, get("/events/EVT003/checkout").statusCode());

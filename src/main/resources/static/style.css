@@ -111,3 +111,8 @@ details.past summary { font-size: 1.2rem; font-weight: 700; cursor: pointer; pad
 
 /* "Not you?" under the check-in result */
 .not-me { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 16px; }
+
+/* Archive / delete */
+.button-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.button-row form { margin: 0; }
+button.danger, .button.danger { background: #b3261e; }

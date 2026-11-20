@@ -6,6 +6,7 @@
 <main>
     <h1>Events</h1>
     <p><a th:href="@{/g/{id}/events/new(id=${group.groupId})}" class="button">+ Create event</a></p>
+    <p class="result ok" th:if="${message}" th:text="${message}">Done</p>
 
     <h2>Upcoming (<span th:text="${upcoming.size()}">0</span>)</h2>
     <p th:if="${upcoming.isEmpty()}" class="muted">No upcoming events.</p>
@@ -21,6 +22,18 @@
         <p th:if="${past.isEmpty()}" class="muted">No past events.</p>
         <ul class="cards">
             <li th:each="event : ${past}">
+                <a th:replace="~{fragments :: eventCard(${group}, ${event})}"></a>
+            </li>
+        </ul>
+    </details>
+
+    <!-- Archived events: hidden from the lists above, shown only when this is opened -->
+    <details class="past archived">
+        <summary>Archived (<span th:text="${archived.size()}">0</span>)</summary>
+        <p class="muted small">Still counted in attendance rates and reports.</p>
+        <p th:if="${archived.isEmpty()}" class="muted">No archived events.</p>
+        <ul class="cards">
+            <li th:each="event : ${archived}">
                 <a th:replace="~{fragments :: eventCard(${group}, ${event})}"></a>
             </li>
         </ul>

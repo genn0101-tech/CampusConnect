@@ -55,6 +55,7 @@ public class GroupController {
         }
         model.addAttribute("upcoming", eventService.upcomingEvents(groupId));
         model.addAttribute("past", eventService.pastEvents(groupId));
+        model.addAttribute("archived", eventService.archivedEvents(groupId));
         return "group";
     }
 

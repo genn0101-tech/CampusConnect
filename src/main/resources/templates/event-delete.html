@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Delete event')}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main class="narrow">
+    <h1>Delete this event?</h1>
+    <p class="event-name" th:text="${event.eventName}">Event name</p>
+    <p th:text="${@timeFormat.date(event.eventDate)} + ' · ' + ${event.location}">11/24/2026 · Gym</p>
+
+    <div class="result warn">
+        <p><strong>This deletes the event and all <span th:text="${attendanceCount}">12</span> attendance records.
+            It cannot be undone.</strong></p>
+        <p class="small">Download the CSV report first if you may need it.
+            The people stay on the People page.</p>
+    </div>
+
+    <p><a th:href="@{/g/{gid}/events/{eid}/report.csv(gid=${group.groupId},eid=${event.eventId})}">Download CSV first</a></p>
+
+    <form method="post" th:action="@{/g/{gid}/events/{eid}/delete(gid=${group.groupId},eid=${event.eventId})}">
+        <button type="submit" class="danger">Delete forever</button>
+    </form>
+
+    <p class="small"><a th:href="@{/g/{gid}/events/{eid}(gid=${group.groupId},eid=${event.eventId})}">Cancel</a></p>
+</main>
+</body>
+</html>

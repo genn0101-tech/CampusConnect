@@ -17,6 +17,9 @@ public class Event {
     private LocalDate eventDate; // not "date": that is a reserved word in SQL
     private String location;
     private String groupId;
+    // true = hidden from the normal lists (still counted in attendance rates and reports).
+    // Nullable so it can be added to a table that already has rows; null means "not archived".
+    private Boolean archived;
 
     protected Event() {
     }
@@ -27,6 +30,18 @@ public class Event {
         this.eventDate = eventDate;
         this.location = location;
         this.groupId = groupId;
+    }
+
+    public boolean isArchived() {
+        return Boolean.TRUE.equals(archived);
+    }
+
+    public void archive() {
+        this.archived = true;
+    }
+
+    public void restore() {
+        this.archived = false;
     }
 
     public String getEventId() {

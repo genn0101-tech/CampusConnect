@@ -10,6 +10,7 @@
         <span th:text="${@timeFormat.date(event.eventDate)}">11/24/2026</span> ·
         <span th:text="${event.location}">Building A</span>
     </p>
+    <p class="result warn" th:if="${event.archived}">Archived: hidden from the event lists.</p>
     <p><a th:href="@{/g/{gid}/events/{eid}/live(gid=${group.groupId},eid=${event.eventId})}" class="button live-button">Live view</a></p>
 
     <p class="error" th:if="${error}" th:text="${error}">Error</p>
@@ -64,6 +65,20 @@
 
     <h2>Funding report</h2>
     <p><a th:href="@{/g/{gid}/events/{eid}/report.csv(gid=${group.groupId},eid=${event.eventId})}" class="button">Download CSV</a></p>
+
+    <!-- Archive hides the event from the lists. Only an archived event can be deleted. -->
+    <h2>Archive</h2>
+    <form th:unless="${event.archived}" method="post"
+          th:action="@{/g/{gid}/events/{eid}/archive(gid=${group.groupId},eid=${event.eventId})}">
+        <button type="submit" class="secondary">Archive</button>
+    </form>
+    <div th:if="${event.archived}" class="button-row">
+        <form method="post" th:action="@{/g/{gid}/events/{eid}/restore(gid=${group.groupId},eid=${event.eventId})}">
+            <button type="submit">Restore</button>
+        </form>
+        <a th:href="@{/g/{gid}/events/{eid}/delete(gid=${group.groupId},eid=${event.eventId})}"
+           class="button danger">Delete…</a>
+    </div>
 </main>
 </body>
 </html>
