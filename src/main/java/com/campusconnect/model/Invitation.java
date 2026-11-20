@@ -30,6 +30,11 @@ public class Invitation {
         this.status = status;
     }
 
+    /** Moves this invitation to a corrected Student ID. */
+    public void changeStudentId(String newStudentId) {
+        this.studentId = newStudentId;
+    }
+
     public Long getId() {
         return id;
     }

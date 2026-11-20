@@ -27,6 +27,7 @@
     <nav>
         <a th:href="@{/}" class="nav-button">Home</a>
         <a th:href="@{/g/{id}(id=${group.groupId})}" class="nav-button">Events</a>
+        <a th:href="@{/g/{id}/people(id=${group.groupId})}" class="nav-button">People</a>
         <!-- Shown only on pages of one event (detail, Live, edit): opens that event's Live page -->
         <a th:if="${event != null}" th:href="@{/g/{gid}/events/{eid}/live(gid=${group.groupId},eid=${event.eventId})}"
            class="nav-button live-button">Live</a>

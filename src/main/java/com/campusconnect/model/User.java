@@ -10,6 +10,8 @@ import jakarta.persistence.Table;
 public class User {
 
     public static final String ROLE_GUEST = "Guest";
+    // StudentID: 1-20 letters or digits (kept loose on purpose so nobody is blocked at the door)
+    public static final String STUDENT_ID_PATTERN = "[A-Za-z0-9]{1,20}";
 
     @Id
     private String studentId;
@@ -39,6 +41,12 @@ public class User {
 
     public static String displayRole(String role) {
         return ROLE_GUEST.equals(role) ? "Participant" : role;
+    }
+
+    /** Fixes a typo in the name or email (the group's People page). */
+    public void changeNameAndEmail(String name, String email) {
+        this.name = name;
+        this.email = email;
     }
 
     public boolean isGuest() {

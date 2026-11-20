@@ -6,6 +6,7 @@ import com.campusconnect.model.User;
 import com.campusconnect.service.AttendanceService;
 import com.campusconnect.service.EventService;
 import com.campusconnect.service.GroupService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,11 +23,12 @@ import java.util.Optional;
 @Controller
 public class CheckInController {
 
-    // StudentID: 1-20 letters or digits (kept loose on purpose so nobody is blocked at the door)
-    private static final String STUDENT_ID_PATTERN = "[A-Za-z0-9]{1,20}";
+    private static final String STUDENT_ID_PATTERN = User.STUDENT_ID_PATTERN;
     // Suggestions start after this many typed characters (name) or digits (Student ID)
     private static final int MIN_NAME_QUERY = 2;
     private static final int MIN_ID_QUERY = 4;
+    // Session key: the check-in this browser just made, which "Not you?" may undo
+    private static final String UNDO_KEY = "undoableCheckIn";
 
     private final EventService eventService;
     private final AttendanceService attendanceService;
@@ -55,7 +58,8 @@ public class CheckInController {
     }
 
     @PostMapping("/events/{eventId}/checkin")
-    public String checkIn(@PathVariable String eventId, @RequestParam String studentId, Model model) {
+    public String checkIn(@PathVariable String eventId, @RequestParam String studentId,
+                          HttpSession session, Model model) {
         Event event = addEvent(eventId, model);
         studentId = studentId.trim();
 
@@ -70,7 +74,8 @@ public class CheckInController {
             model.addAttribute("studentId", studentId);
             return "checkin-guest";
         }
-        return completeCheckIn(event, user.get(), model);
+        // A known Student ID: the result page asks "Not you?" in case of a typo
+        return completeCheckIn(event, user.get(), true, session, model);
     }
 
     @PostMapping("/events/{eventId}/checkin/guest")
@@ -78,7 +83,7 @@ public class CheckInController {
                                 @RequestParam String studentId,
                                 @RequestParam String name,
                                 @RequestParam String email,
-                                Model model) {
+                                HttpSession session, Model model) {
         Event event = addEvent(eventId, model);
         studentId = studentId.trim();
         name = name.trim();
@@ -101,11 +106,14 @@ public class CheckInController {
         if (user == null) {
             user = attendanceService.registerGuest(studentId, name, email, event.getGroupId());
         }
-        return completeCheckIn(event, user, model);
+        return completeCheckIn(event, user, false, session, model);
     }
 
-    /** Shared last step of both check-in paths. */
-    private String completeCheckIn(Event event, User user, Model model) {
+    /**
+     * Shared last step of both check-in paths.
+     * knownId = the Student ID was already registered, so "Not you?" is shown.
+     */
+    private String completeCheckIn(Event event, User user, boolean knownId, HttpSession session, Model model) {
         Optional<Attendance> existing = attendanceService.findAttendance(event.getEventId(), user.getStudentId());
         model.addAttribute("user", user);
         if (existing.isPresent()) {
@@ -115,10 +123,29 @@ public class CheckInController {
         } else {
             Attendance attendance = attendanceService.checkIn(event.getEventId(), user.getStudentId());
             model.addAttribute("success", true);
-            model.addAttribute("message", "Checked in. Welcome, " + user.getName() + "!");
+            model.addAttribute("message", "Checked in.");
             model.addAttribute("attendance", attendance);
+            if (knownId) {
+                // Remember it so "Not you?" can undo exactly this one check-in, and nobody else's
+                session.setAttribute(UNDO_KEY, attendance.getId());
+                model.addAttribute("canUndo", true);
+            }
         }
+        model.addAttribute("knownId", knownId);
         return "result";
+    }
+
+    /** "Not you?": undo the check-in this browser just made, then ask for the Student ID again. */
+    @PostMapping("/events/{eventId}/checkin/not-me")
+    public String notMe(@PathVariable String eventId, HttpSession session, RedirectAttributes redirect) {
+        eventService.getEvent(eventId); // 404 if the event does not exist
+        Object undoable = session.getAttribute(UNDO_KEY);
+        if (undoable instanceof Long attendanceId) {
+            attendanceService.undoCheckIn(attendanceId, eventId);
+            session.removeAttribute(UNDO_KEY);
+        }
+        redirect.addFlashAttribute("error", "Please enter your Student ID again.");
+        return "redirect:/events/" + eventId + "/checkin";
     }
 
     // ---------- Check-out ----------

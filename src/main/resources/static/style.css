@@ -108,3 +108,6 @@ button.secondary { background: #5f6b7a; }
 /* Folded "Past" list on the group page */
 details.past { margin-top: 1.6em; }
 details.past summary { font-size: 1.2rem; font-weight: 700; cursor: pointer; padding: 6px 0; }
+
+/* "Not you?" under the check-in result */
+.not-me { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 16px; }

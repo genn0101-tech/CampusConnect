@@ -7,8 +7,24 @@
     <!-- Green box on success, yellow box on "already done" -->
     <div th:class="${success} ? 'result ok' : 'result warn'">
         <h1 th:text="${message}">Checked in.</h1>
-        <p th:if="${user != null}" th:text="${user.name} + ' (' + ${user.displayRole()} + ')'">Name (Member)</p>
+        <!-- knownId is only set on check-in pages: "Welcome" there, just the name after check-out -->
+        <p th:if="${user != null and knownId != null}">Welcome, <strong th:text="${user.name}">Name</strong>
+            <span th:text="'(' + ${user.displayRole()} + ')'">(Member)</span></p>
+        <p th:if="${user != null and knownId == null}"
+           th:text="${user.name} + ' (' + ${user.displayRole()} + ')'">Name (Member)</p>
     </div>
+
+    <!-- A known Student ID may be someone else's (typo): let the person undo and type it again -->
+    <form th:if="${canUndo}" th:action="@{/events/{id}/checkin/not-me(id=${event.eventId})}" method="post"
+          class="not-me">
+        <span>Not <strong th:text="${user.name}">Name</strong>?</span>
+        <button type="submit" class="secondary">Not you? Enter your ID again</button>
+    </form>
+    <!-- "== true" is safe when knownId is missing (check-out pages do not set it) -->
+    <p th:if="${knownId == true and success == false}" class="not-me">
+        Not <strong th:text="${user.name}">Name</strong>?
+        <a th:href="@{/events/{id}/checkin(id=${event.eventId})}">Enter your Student ID again</a>
+    </p>
 
     <p class="event-name" th:text="${event.eventName}">Event name</p>
     <p>In: <strong th:text="${@timeFormat.dateTime(attendance.checkInTime)}">11/24/2026 3:00 PM</strong></p>

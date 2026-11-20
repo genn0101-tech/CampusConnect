@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Edit person')}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main class="narrow">
+    <h1>Edit person</h1>
+    <p class="muted" th:text="${person.name} + ' (' + ${person.displayRole()} + ')'">Name (Member)</p>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+
+    <form th:action="@{/g/{gid}/people/{sid}/edit(gid=${group.groupId},sid=${person.studentId})}"
+          method="post" class="form">
+        <input type="hidden" name="from" th:value="${from}">
+        <input type="hidden" name="eventId" th:value="${eventId}">
+        <label>Name
+            <input type="text" name="name" th:value="${name}" maxlength="60" required>
+        </label>
+        <label>Email
+            <input type="email" name="email" th:value="${email}" required>
+        </label>
+        <label>Student ID
+            <input type="text" name="newStudentId" th:value="${newStudentId}" inputmode="numeric"
+                   autocomplete="off" required>
+        </label>
+        <p class="small muted">Changing the Student ID moves all of this person's attendance
+            (in every group) to the new ID. An ID that already belongs to someone else is not accepted.
+            One person is shared by all groups, so other groups will see these changes too.</p>
+        <button type="submit">Save</button>
+    </form>
+
+    <p class="small"><a th:href="@{${backUrl}}">Cancel</a></p>
+</main>
+</body>
+</html>

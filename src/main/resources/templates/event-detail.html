@@ -48,7 +48,8 @@
             </thead>
             <tbody>
             <tr th:each="p : ${participants}">
-                <td th:text="${p.name()}">Name</td>
+                <td><a th:href="@{/g/{gid}/people/{sid}/edit(gid=${group.groupId},sid=${p.studentId()},from='detail',eventId=${event.eventId})}"
+                       th:text="${p.name()}">Name</a></td>
                 <td th:text="${p.role()}">Member</td>
                 <td th:text="${@timeFormat.time(p.checkInTime())}">3:00 PM</td>
                 <td th:text="${p.checkOutTime() != null} ? ${@timeFormat.time(p.checkOutTime())} : '—'">5:00 PM</td>

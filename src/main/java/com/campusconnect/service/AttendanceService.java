@@ -66,6 +66,18 @@ public class AttendanceService {
         return attendanceRepository.save(attendance);
     }
 
+    /**
+     * "Not you?" on the check-in result page: removes a check-in that was just made by mistake.
+     * Only if it belongs to this event and the person has not checked out yet.
+     */
+    public void undoCheckIn(Long attendanceId, String eventId) {
+        attendanceRepository.findById(attendanceId).ifPresent(attendance -> {
+            if (attendance.getEventId().equals(eventId) && !attendance.isCheckedOut()) {
+                attendanceRepository.delete(attendance);
+            }
+        });
+    }
+
     // ---------- Check-out by name ----------
 
     /**

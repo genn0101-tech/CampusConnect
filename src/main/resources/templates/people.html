@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('People · ' + ${group.groupName})}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main>
+    <h1>People</h1>
+    <p class="muted small">Everyone who came to this group's events, or was registered by this group.</p>
+
+    <p class="result ok" th:if="${message}" th:text="${message}">Saved.</p>
+    <p th:if="${people.isEmpty()}">Nobody yet.</p>
+
+    <div class="table-wrap" th:unless="${people.isEmpty()}">
+        <table>
+            <thead>
+            <tr><th>Name</th><th>Student ID</th><th>Email</th><th>Visits</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${people}">
+                <td th:text="${p.name()}">Name</td>
+                <td th:text="${p.studentId()}">123456789</td>
+                <td th:text="${p.email()}">name@example.com</td>
+                <td th:text="${p.visits()}">3</td>
+                <td><a th:href="@{/g/{gid}/people/{sid}/edit(gid=${group.groupId},sid=${p.studentId()})}">Edit</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

@@ -249,12 +249,12 @@ class OwnerFeaturesTests {
         eventRepository.save(new Event("EVT903", "Yesterday", today.minusDays(1), "", "GRIT"));
 
         List<Event> upcoming = eventService.upcomingEvents("GRIT");
-        assertEquals("EVT902", upcoming.get(0).getEventId()); // newest date first
-        assertEquals("EVT901", upcoming.get(1).getEventId()); // today counts as upcoming
+        assertEquals("EVT901", upcoming.get(0).getEventId()); // today first (and counts as upcoming)
+        assertEquals("EVT902", upcoming.get(1).getEventId()); // then later dates
         assertEquals(2, upcoming.size());
 
         List<Event> past = eventService.pastEvents("GRIT");
-        assertEquals("EVT903", past.get(0).getEventId());
+        assertEquals("EVT903", past.get(0).getEventId()); // past: newest first
         assertEquals("EVT001", past.get(past.size() - 1).getEventId()); // sample event from March
     }
 }

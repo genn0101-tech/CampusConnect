@@ -56,6 +56,11 @@ public class Attendance {
         this.checkoutSource = (time == null) ? null : SOURCE_OWNER;
     }
 
+    /** Moves this record to a corrected Student ID (the group's People page). */
+    public void changeStudentId(String newStudentId) {
+        this.studentId = newStudentId;
+    }
+
     /** Check-in time fixed by the group. Does not change who recorded the check-out. */
     public void setCheckInTime(LocalDateTime time) {
         this.checkInTime = time;

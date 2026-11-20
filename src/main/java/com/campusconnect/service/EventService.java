@@ -30,15 +30,16 @@ public class EventService {
         return events;
     }
 
-    /** Events from today on (today counts as upcoming), newest date first. */
+    /** Events from today on (today counts as upcoming), nearest date first: today, tomorrow, ... */
     public List<Event> upcomingEvents(String groupId) {
         LocalDate today = LocalDate.now(clock); // Pacific time
         List<Event> upcoming = new ArrayList<>();
-        for (Event event : eventsOfGroupNewestFirst(groupId)) {
+        for (Event event : eventRepository.findByGroupId(groupId)) {
             if (!event.getEventDate().isBefore(today)) {
                 upcoming.add(event);
             }
         }
+        upcoming.sort(Comparator.comparing(Event::getEventDate));
         return upcoming;
     }
 
