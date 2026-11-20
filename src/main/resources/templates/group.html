@@ -7,16 +7,25 @@
     <h1>Events</h1>
     <p><a th:href="@{/g/{id}/events/new(id=${group.groupId})}" class="button">+ Create event</a></p>
 
-    <p th:if="${events.isEmpty()}">No events yet.</p>
-
+    <h2>Upcoming (<span th:text="${upcoming.size()}">0</span>)</h2>
+    <p th:if="${upcoming.isEmpty()}" class="muted">No upcoming events.</p>
     <ul class="cards">
-        <li th:each="event : ${events}">
-            <a th:href="@{/g/{gid}/events/{eid}(gid=${group.groupId},eid=${event.eventId})}">
-                <strong th:text="${event.eventName}">Event name</strong>
-                <span class="muted" th:text="${event.eventDate} + ' · ' + ${event.location}">2026-03-26 · Building A</span>
-            </a>
+        <li th:each="event : ${upcoming}">
+            <a th:replace="~{fragments :: eventCard(${group}, ${event})}"></a>
         </li>
     </ul>
+
+    <!-- <details> is folded until tapped (no JavaScript needed) -->
+    <details class="past">
+        <summary>Past (<span th:text="${past.size()}">0</span>)</summary>
+        <p th:if="${past.isEmpty()}" class="muted">No past events.</p>
+        <ul class="cards">
+            <li th:each="event : ${past}">
+                <a th:replace="~{fragments :: eventCard(${group}, ${event})}"></a>
+            </li>
+        </ul>
+    </details>
+
 </main>
 </body>
 </html>

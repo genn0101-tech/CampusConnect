@@ -26,7 +26,7 @@
     <a th:href="@{/g/{id}(id=${group.groupId})}" class="brand" th:text="${group.groupName}">Group</a>
     <nav>
         <a th:href="@{/}" class="nav-button">Home</a>
-        <a th:href="@{/g/{id}(id=${group.groupId})}" class="nav-button">Group top</a>
+        <a th:href="@{/g/{id}(id=${group.groupId})}" class="nav-button">Events</a>
         <!-- Shown only on pages of one event (detail, Live, edit): opens that event's Live page -->
         <a th:if="${event != null}" th:href="@{/g/{gid}/events/{eid}/live(gid=${group.groupId},eid=${event.eventId})}"
            class="nav-button live-button">Live</a>
@@ -37,5 +37,11 @@
         </form>
     </nav>
 </header>
+
+<!-- One event in a list (group page): name, date, location -->
+<a th:fragment="eventCard(group, event)" th:href="@{/g/{gid}/events/{eid}(gid=${group.groupId},eid=${event.eventId})}">
+    <strong th:text="${event.eventName}">Event name</strong>
+    <span class="muted" th:text="${@timeFormat.date(event.eventDate)} + ' · ' + ${event.location}">11/24/2026 · Building A</span>
+</a>
 </body>
 </html>

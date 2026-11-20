@@ -15,11 +15,17 @@
     <form th:action="@{/g/{gid}/events/{eid}/checkout-all(gid=${group.groupId},eid=${event.eventId})}"
           method="post" class="form">
         <input type="hidden" name="from" th:value="${from}">
-        <label>Check-out time
-            <!-- datetime-local shows a date and time picker on phones -->
-            <input type="datetime-local" name="time" required
-                   th:value="${#temporals.format(time, 'yyyy-MM-dd''T''HH:mm')}">
-        </label>
+        <!-- Plain text fields (not the phone's own picker) so the format is always 11/24/2026 and 10:55 PM -->
+        <div class="date-time">
+            <label>Date
+                <input type="text" name="date" required placeholder="11/24/2026"
+                       th:value="${@timeFormat.dateOf(time)}">
+            </label>
+            <label>Time
+                <input type="text" name="time" required placeholder="10:55 PM"
+                       th:value="${@timeFormat.time(time)}">
+            </label>
+        </div>
         <p class="small muted">People who checked in after this time are skipped.</p>
         <button type="submit">Check out everyone</button>
     </form>

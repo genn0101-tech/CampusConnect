@@ -9,6 +9,7 @@ import com.campusconnect.repository.EventRepository;
 import com.campusconnect.repository.UserRepository;
 import com.campusconnect.service.AttendanceService;
 import com.campusconnect.service.AttendanceService.BulkCheckoutResult;
+import com.campusconnect.service.EventService;
 import com.campusconnect.service.ParticipantRow;
 import com.campusconnect.service.ReportService;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,8 @@ class OwnerFeaturesTests {
     private AttendanceRepository attendanceRepository;
     @Autowired
     private LocaleResolver localeResolver;
+    @Autowired
+    private EventService eventService;
 
     /** Saves a user and their check-in at the test event. */
     private Attendance checkedIn(String studentId, String name, LocalDateTime checkIn) {
@@ -236,5 +239,22 @@ class OwnerFeaturesTests {
         MockHttpServletRequest japaneseBrowser = new MockHttpServletRequest();
         japaneseBrowser.addHeader("Accept-Language", "ja-JP");
         assertEquals(Locale.US, localeResolver.resolveLocale(japaneseBrowser));
+    }
+
+    @Test
+    void eventsAreSplitIntoUpcomingAndPast() {
+        LocalDate today = attendanceService.currentTime().toLocalDate(); // Pacific time
+        eventRepository.save(new Event("EVT901", "Today", today, "", "GRIT"));
+        eventRepository.save(new Event("EVT902", "Next week", today.plusDays(7), "", "GRIT"));
+        eventRepository.save(new Event("EVT903", "Yesterday", today.minusDays(1), "", "GRIT"));
+
+        List<Event> upcoming = eventService.upcomingEvents("GRIT");
+        assertEquals("EVT902", upcoming.get(0).getEventId()); // newest date first
+        assertEquals("EVT901", upcoming.get(1).getEventId()); // today counts as upcoming
+        assertEquals(2, upcoming.size());
+
+        List<Event> past = eventService.pastEvents("GRIT");
+        assertEquals("EVT903", past.get(0).getEventId());
+        assertEquals("EVT001", past.get(past.size() - 1).getEventId()); // sample event from March
     }
 }

@@ -6,7 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -14,9 +16,11 @@ import java.util.List;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final Clock clock;
 
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, Clock clock) {
         this.eventRepository = eventRepository;
+        this.clock = clock;
     }
 
     /** Events of one group, newest first. Sorted here at display time, not in storage. */
@@ -24,6 +28,30 @@ public class EventService {
         List<Event> events = eventRepository.findByGroupId(groupId);
         events.sort(Comparator.comparing(Event::getEventDate).reversed());
         return events;
+    }
+
+    /** Events from today on (today counts as upcoming), newest date first. */
+    public List<Event> upcomingEvents(String groupId) {
+        LocalDate today = LocalDate.now(clock); // Pacific time
+        List<Event> upcoming = new ArrayList<>();
+        for (Event event : eventsOfGroupNewestFirst(groupId)) {
+            if (!event.getEventDate().isBefore(today)) {
+                upcoming.add(event);
+            }
+        }
+        return upcoming;
+    }
+
+    /** Events before today, newest date first. */
+    public List<Event> pastEvents(String groupId) {
+        LocalDate today = LocalDate.now(clock);
+        List<Event> past = new ArrayList<>();
+        for (Event event : eventsOfGroupNewestFirst(groupId)) {
+            if (event.getEventDate().isBefore(today)) {
+                past.add(event);
+            }
+        }
+        return past;
     }
 
     /** Finds an event or shows a "404 Not Found" page if the ID does not exist. */

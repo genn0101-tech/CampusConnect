@@ -13,15 +13,30 @@
     <form th:action="@{/g/{gid}/events/{eid}/attendance/{aid}/edit(gid=${group.groupId},eid=${event.eventId},aid=${attendance.id})}"
           method="post" class="form">
         <input type="hidden" name="from" th:value="${from}">
-        <label>Check-in time
-            <input type="datetime-local" name="checkIn" required
-                   th:value="${#temporals.format(checkIn, 'yyyy-MM-dd''T''HH:mm')}">
-        </label>
-        <label>Check-out time
-            <input type="datetime-local" name="checkOut"
-                   th:value="${checkOut != null} ? ${#temporals.format(checkOut, 'yyyy-MM-dd''T''HH:mm')} : ''">
-        </label>
-        <p class="small muted">Times are Pacific time. Leave check-out empty if the person is still here.
+        <!-- Plain text fields (not the phone's own picker) so the format is always 11/24/2026 and 10:55 PM -->
+        <p class="field-title">Check-in</p>
+        <div class="date-time">
+            <label>Date
+                <input type="text" name="checkInDate" required placeholder="11/24/2026"
+                       th:value="${@timeFormat.dateOf(checkIn)}">
+            </label>
+            <label>Time
+                <input type="text" name="checkInTime" required placeholder="10:55 PM"
+                       th:value="${@timeFormat.time(checkIn)}">
+            </label>
+        </div>
+        <p class="field-title">Check-out</p>
+        <div class="date-time">
+            <label>Date
+                <input type="text" name="checkOutDate" placeholder="11/24/2026"
+                       th:value="${@timeFormat.dateOf(checkOut)}">
+            </label>
+            <label>Time
+                <input type="text" name="checkOutTime" placeholder="10:55 PM"
+                       th:value="${@timeFormat.time(checkOut)}">
+            </label>
+        </div>
+        <p class="small muted">Times are Pacific time. Leave both check-out fields empty if the person is still here.
             A changed check-out is saved as "entered by the group" (Out by: Owner).</p>
         <button type="submit">Save</button>
     </form>

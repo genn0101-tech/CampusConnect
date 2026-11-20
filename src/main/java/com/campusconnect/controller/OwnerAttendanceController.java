@@ -9,6 +9,7 @@ import com.campusconnect.service.EventService;
 import com.campusconnect.service.GroupAccess;
 import com.campusconnect.service.GroupService;
 import com.campusconnect.service.ParticipantRow;
+import com.campusconnect.service.TimeFormat;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,13 +34,16 @@ public class OwnerAttendanceController {
     private final EventService eventService;
     private final AttendanceService attendanceService;
     private final GroupAccess groupAccess;
+    private final TimeFormat timeFormat;
 
     public OwnerAttendanceController(GroupService groupService, EventService eventService,
-                                     AttendanceService attendanceService, GroupAccess groupAccess) {
+                                     AttendanceService attendanceService, GroupAccess groupAccess,
+                                     TimeFormat timeFormat) {
         this.groupService = groupService;
         this.eventService = eventService;
         this.attendanceService = attendanceService;
         this.groupAccess = groupAccess;
+        this.timeFormat = timeFormat;
     }
 
     // ---------- Live page ----------
@@ -80,19 +84,20 @@ public class OwnerAttendanceController {
 
     @PostMapping("/g/{groupId}/events/{eventId}/checkout-all")
     public String checkoutAll(@PathVariable String groupId, @PathVariable String eventId,
-                              @RequestParam String time, @RequestParam(defaultValue = "detail") String from,
+                              @RequestParam String date, @RequestParam String time,
+                              @RequestParam(defaultValue = "detail") String from,
                               HttpSession session, Model model, RedirectAttributes redirect) {
         if (!addGroupAndEvent(groupId, eventId, session, model)) {
             return "redirect:/g/" + groupId;
         }
         LocalDateTime checkOutTime;
         try {
-            checkOutTime = parseTime(time);
+            checkOutTime = timeFormat.parse(date, time);
         } catch (DateTimeParseException e) {
             checkOutTime = null;
         }
         if (checkOutTime == null) {
-            redirect.addFlashAttribute("error", "Please enter a valid check-out time.");
+            redirect.addFlashAttribute("error", "Please enter the date like 11/24/2026 and the time like 10:55 PM.");
             return "redirect:/g/" + groupId + "/events/" + eventId + "/checkout-all?from=" + safeFrom(from);
         }
 
@@ -126,8 +131,10 @@ public class OwnerAttendanceController {
     @PostMapping("/g/{groupId}/events/{eventId}/attendance/{attendanceId}/edit")
     public String edit(@PathVariable String groupId, @PathVariable String eventId,
                        @PathVariable Long attendanceId,
-                       @RequestParam String checkIn,
-                       @RequestParam(defaultValue = "") String checkOut, // empty = still here
+                       @RequestParam String checkInDate, @RequestParam String checkInTime,
+                       // both empty = still here
+                       @RequestParam(defaultValue = "") String checkOutDate,
+                       @RequestParam(defaultValue = "") String checkOutTime,
                        @RequestParam(defaultValue = "detail") String from,
                        HttpSession session, Model model, RedirectAttributes redirect) {
         if (!addGroupAndEvent(groupId, eventId, session, model)) {
@@ -137,9 +144,10 @@ public class OwnerAttendanceController {
 
         String error;
         try {
-            error = attendanceService.updateTimes(attendance, parseTime(checkIn), parseTime(checkOut));
+            error = attendanceService.updateTimes(attendance,
+                    timeFormat.parse(checkInDate, checkInTime), timeFormat.parse(checkOutDate, checkOutTime));
         } catch (DateTimeParseException e) {
-            error = "Please enter valid times.";
+            error = "Please enter dates like 11/24/2026 and times like 10:55 PM.";
         }
         if (error != null) {
             // Show the form again with the error
@@ -167,17 +175,6 @@ public class OwnerAttendanceController {
         model.addAttribute("group", group);
         model.addAttribute("event", event);
         return true;
-    }
-
-    /**
-     * Reads the value of an <input type="datetime-local">, e.g. "2026-11-24T20:30".
-     * Empty means "no time". Seconds are cut, like everywhere else in the app.
-     */
-    private LocalDateTime parseTime(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return LocalDateTime.parse(value.trim()).withSecond(0).withNano(0);
     }
 
     /** Only two pages are allowed as "go back to", so the parameter cannot send people elsewhere. */

@@ -6,19 +6,18 @@ import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 
 /** Builds the funding report: one CSV file per event, made to open cleanly in Excel. */
 @Service
 public class ReportService {
 
-    // US style, e.g. 11/24/2026 and 11/24/2026 8:30 PM (times are already Pacific time)
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("M/d/yyyy", Locale.US);
-    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("M/d/yyyy h:mm a", Locale.US);
+    // Dates and times use the same US-English text as every page (e.g. 11/24/2026 8:30 PM)
+    private final TimeFormat timeFormat;
+
+    public ReportService(TimeFormat timeFormat) {
+        this.timeFormat = timeFormat;
+    }
 
     public String buildCsv(Event event, List<ParticipantRow> rows, Double averageStayMinutes) {
         StringBuilder csv = new StringBuilder();
@@ -27,14 +26,14 @@ public class ReportService {
         for (ParticipantRow row : rows) {
             csv.append(field(event.getEventId())).append(',')
                     .append(field(event.getEventName())).append(',')
-                    .append(text(format(event.getEventDate()))).append(',')
+                    .append(text(timeFormat.date(event.getEventDate()))).append(',')
                     .append(field(event.getLocation())).append(',')
                     .append(text(row.studentId())).append(',')
                     .append(field(row.name())).append(',')
                     .append(field(row.email())).append(',')
                     .append(field(row.role())).append(',')
-                    .append(text(format(row.checkInTime()))).append(',')
-                    .append(text(format(row.checkOutTime()))).append(',')
+                    .append(text(timeFormat.dateTime(row.checkInTime()))).append(',')
+                    .append(text(timeFormat.dateTime(row.checkOutTime()))).append(',')
                     .append(row.stayMinutes() == null ? "" : row.stayMinutes()).append(',')
                     .append(field(row.checkoutSource()))
                     .append('\n');
@@ -75,14 +74,6 @@ public class ReportService {
                 .replaceAll("\\p{Cntrl}", "")      // remove invisible control characters
                 .replaceAll("\\s+", "-");          // spaces -> "-"
         return cleaned.isEmpty() ? fallback : cleaned;
-    }
-
-    private String format(LocalDate date) {
-        return date == null ? "" : date.format(DATE);
-    }
-
-    private String format(LocalDateTime time) {
-        return time == null ? "" : time.format(DATE_TIME);
     }
 
     /**

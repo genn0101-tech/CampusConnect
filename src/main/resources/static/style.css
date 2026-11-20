@@ -98,3 +98,13 @@ button.secondary { background: #5f6b7a; }
 .live-table tr.left td { color: #5f6b7a; background: #f6f7f9; }
 .live-table td, .live-table th { padding: 8px 6px; }
 .nav .live-button, .button.live-button { background: #34a853; border-color: #34a853; color: #fff; }
+
+/* Date and time fields side by side */
+.date-time { display: flex; gap: 10px; }
+.date-time label { flex: 1; min-width: 0; }
+.date-time input { width: 100%; }
+.field-title { font-weight: 700; margin: 6px 0 -6px; }
+
+/* Folded "Past" list on the group page */
+details.past { margin-top: 1.6em; }
+details.past summary { font-size: 1.2rem; font-weight: 700; cursor: pointer; padding: 6px 0; }

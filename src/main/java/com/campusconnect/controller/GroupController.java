@@ -53,7 +53,8 @@ public class GroupController {
         if (!groupAccess.isUnlocked(session, groupId)) {
             return "group-locked";
         }
-        model.addAttribute("events", eventService.eventsOfGroupNewestFirst(groupId));
+        model.addAttribute("upcoming", eventService.upcomingEvents(groupId));
+        model.addAttribute("past", eventService.pastEvents(groupId));
         return "group";
     }
 
