@@ -1,9 +1,12 @@
-// Suggestions on the check-out page (only loaded on the event day).
+// Suggestions on the check-out page (people of this event who have not checked out).
 // While the person types a name (2+ letters) or a Student ID (4+ characters),
 // ask the server for matching people. The server only ever sends back names.
 // Tapping a name sends the name form, which checks that person out.
 (function () {
     const form = document.getElementById("name-form");
+    if (!form) {
+        return; // the "same name: enter your Student ID" form is shown instead
+    }
     const nameInput = document.getElementById("name-input");
     const idPrefix = document.getElementById("id-prefix");
     const url = form.dataset.candidatesUrl;

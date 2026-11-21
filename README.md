@@ -89,9 +89,11 @@ It starts with an empty database and refuses to start unless these environment v
 - **No login system.** Access is "this browser knows the group passphrase", not user accounts.
 - **No limit on passphrase attempts.** BCrypt makes each attempt slow, but repeated guessing is not blocked.
 - **No CSRF protection.** Forms do not include CSRF tokens yet.
-- **Check-out by name is open to anyone at the event page.** On the event day, typing 2+ letters shows
-  up to 5 names of people still there, and anyone who knows a name can check that person out.
-  The group can fix wrong times afterwards (shown as "Out by: Owner").
+- **Check-out suggestions are open to anyone at the event page.** Typing 2+ letters of a name
+  (or 4+ characters of a Student ID) shows up to 5 names of people who have not checked out yet,
+  and anyone who knows a name can check that person out. After the event's end time everyone is
+  checked out automatically, so an ended event suggests nobody. The group can fix wrong times
+  afterwards (shown as "Out by: Owner").
 - **Free hosting sleeps.** On Render's free plan the app stops after 15 minutes without visitors,
   and the first visit afterwards takes about a minute. Open the site a few minutes before an event.
 - **Free database expires.** Render's free PostgreSQL stops working 30 days after it is created,

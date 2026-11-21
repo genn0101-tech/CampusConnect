@@ -156,23 +156,20 @@ public class CheckInController {
         return "checkout";
     }
 
-    /** Like addEvent, plus whether "check out by name" is open (only on the event day). */
+    /**
+     * Like addEvent, plus the automatic check-out: after the end time everyone is checked out,
+     * so an ended event suggests nobody (this replaced the old "event day only" rule).
+     */
     private Event addCheckoutPage(String eventId, Model model) {
         Event event = addEvent(eventId, model);
         attendanceService.autoCheckOutIfOver(event); // the event may have ended while the server slept
-        model.addAttribute("nameCheckout", isEventDay(event));
         return event;
-    }
-
-    /** The checkout page is public, so names are only suggested on the day of the event. */
-    private boolean isEventDay(Event event) {
-        return event.getEventDate().equals(attendanceService.currentTime().toLocalDate());
     }
 
     /**
      * Suggestions for the checkout page: a JSON list of names, nothing else.
      * q = part of a name (2+ letters), id = start of a Student ID (4+ characters).
-     * Only people still at the event, at most 5, and only on the event day.
+     * Only people still at the event (not checked out), at most 5.
      */
     @GetMapping("/events/{eventId}/checkout/candidates")
     @ResponseBody
@@ -181,9 +178,6 @@ public class CheckInController {
                                            @RequestParam(defaultValue = "") String id) {
         Event event = eventService.getEvent(eventId);
         attendanceService.autoCheckOutIfOver(event); // people of an ended event are not suggested
-        if (!isEventDay(event)) {
-            return List.of();
-        }
         if (!id.isBlank()) {
             String typedId = id.trim();
             if (typedId.length() < MIN_ID_QUERY || !typedId.matches(STUDENT_ID_PATTERN)) {
@@ -203,11 +197,7 @@ public class CheckInController {
                                  @RequestParam(required = false) String studentId,
                                  @RequestParam(defaultValue = "") String idPrefix,
                                  Model model) {
-        Event event = addCheckoutPage(eventId, model);
-        if (!isEventDay(event)) {
-            model.addAttribute("error", "Check-out by name is only open on the event day. Please use your Student ID.");
-            return "checkout";
-        }
+        addCheckoutPage(eventId, model);
 
         List<Attendance> matches = attendanceService.stillHereWithName(eventId, name);
         // Picked from the Student ID suggestions: keep only people whose ID starts with the typed digits,

@@ -111,6 +111,10 @@ class PageRenderTests {
         assertEquals(200, in.statusCode());
         assertTrue(in.body().contains("Not you?"));
 
+        // Suggestions work on any date (EVT003 is in March): only "not checked out yet" matters
+        assertEquals("[\"Riley Morgan\"]", get("/events/EVT003/checkout/candidates?q=ri").body());
+        assertEquals("[\"Riley Morgan\"]", get("/events/EVT003/checkout/candidates?id=1234").body());
+
         // Check-out result page (this page crashed once because "knownId" was missing)
         HttpResponse<String> out = post("/events/EVT003/checkout", "studentId=123456789");
         assertEquals(200, out.statusCode());

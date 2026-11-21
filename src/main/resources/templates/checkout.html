@@ -21,8 +21,8 @@
     </form>
 
     <th:block th:unless="${sameName}">
-        <!-- Check out by name: type 2+ letters, then tap your name (event day only) -->
-        <form th:if="${nameCheckout}" id="name-form" th:action="@{/events/{id}/checkout/name(id=${event.eventId})}"
+        <!-- Check out by name: type 2+ letters, then tap your name  -->
+        <form id="name-form" th:action="@{/events/{id}/checkout/name(id=${event.eventId})}"
               method="post" class="form"
               th:attr="data-candidates-url=@{/events/{id}/checkout/candidates(id=${event.eventId})}">
             <label>Your name
@@ -34,21 +34,21 @@
             <p class="small muted">Type at least 2 letters, then tap your name.</p>
         </form>
 
-        <p th:if="${nameCheckout}" class="muted or">or</p>
+        <p class="muted or">or</p>
 
         <form th:action="@{/events/{id}/checkout(id=${event.eventId})}" method="post" class="form">
             <label>Student ID
                 <input type="text" id="id-input" name="studentId" inputmode="numeric" autocomplete="off" required>
             </label>
-            <!-- Suggestions show names only, never Student IDs (event day only) -->
-            <ul th:if="${nameCheckout}" id="id-candidates" class="candidates"></ul>
-            <p th:if="${nameCheckout}" class="small muted">After 4 digits, your name appears. Tap it, or finish typing.</p>
+            <!-- Suggestions show names only, never Student IDs  -->
+            <ul id="id-candidates" class="candidates"></ul>
+            <p class="small muted">After 4 digits, your name appears. Tap it, or finish typing.</p>
             <button type="submit">Check out with Student ID</button>
         </form>
     </th:block>
 
     <p class="small">Just arrived? <a th:href="@{/events/{id}/checkin(id=${event.eventId})}">Check in here</a></p>
 </main>
-<script th:if="${nameCheckout}" th:src="@{/checkout.js}"></script>
+<script th:src="@{/checkout.js}"></script>
 </body>
 </html>
