@@ -67,10 +67,10 @@ class CampusConnectApplicationTests {
     }
 
     @Test
-    void attendanceRateExcludesGuests() {
-        // GRIT has 5 users; Bob Lee is a Guest, so 4 rows. Everyone attended the 1 held event.
+    void attendanceRateCountsEveryone() {
+        // All 5 people who came to GRIT's one held event are counted, Bob Lee (Participant) too
         List<MemberRate> rates = attendanceService.attendanceRates("GRIT");
-        assertEquals(4, rates.size());
+        assertEquals(5, rates.size());
         for (MemberRate rate : rates) {
             assertEquals(1, rate.heldEvents());
             assertEquals(100.0, rate.ratePercent());

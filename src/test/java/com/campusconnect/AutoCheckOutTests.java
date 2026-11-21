@@ -47,6 +47,30 @@ class AutoCheckOutTests {
     }
 
     @Test
+    void attendanceRateStartsAtTheFirstVisit() {
+        // GRIT: sample EVT001 (March) + two new held events
+        LocalDate today = attendanceService.currentTime().toLocalDate();
+        Event lastWeek = eventService.createEvent("Last week", today.minusDays(7), "", "GRIT");
+        Event yesterday = eventService.createEvent("Yesterday", today.minusDays(1), "", "GRIT");
+        eventService.createEvent("Next week", today.plusDays(7), "", "GRIT"); // not held yet: not counted
+
+        // A newcomer who first came last week and then missed yesterday: 1 / 2 (March is not counted)
+        checkIn(lastWeek.getEventId(), "800001", today.minusDays(7).atTime(19, 0));
+        // Riley came in March and yesterday: 2 / 3
+        attendanceRepository.save(new Attendance(yesterday.getEventId(), "123456789", today.minusDays(1).atTime(19, 0), null));
+
+        var rates = attendanceService.attendanceRates("GRIT");
+        var newcomer = rates.stream().filter(r -> r.studentId().equals("800001")).findFirst().orElseThrow();
+        assertEquals("Participant", newcomer.role());
+        assertEquals(1, newcomer.attendedEvents());
+        assertEquals(2, newcomer.heldEvents());
+        assertEquals(50.0, newcomer.ratePercent());
+        var riley = rates.stream().filter(r -> r.studentId().equals("123456789")).findFirst().orElseThrow();
+        assertEquals(2, riley.attendedEvents());
+        assertEquals(3, riley.heldEvents());
+    }
+
+    @Test
     void endTimeBeforeStartMeansNextDay() {
         MeetingTime t = EventService.meetingTime(LocalDate.of(2026, 11, 24), LocalTime.of(22, 0), LocalTime.of(1, 0));
         assertEquals(LocalDateTime.of(2026, 11, 24, 22, 0), t.start());

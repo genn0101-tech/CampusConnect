@@ -15,12 +15,13 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /** Check-in / check-out, guest registration, time fixes, stay duration and attendance rate. */
 @Service
@@ -290,36 +291,48 @@ public class AttendanceService {
     // ---------- Attendance rate ----------
 
     /**
-     * For each non-Guest user of the group:
-     * (events of the group they attended) / (events of the group held so far).
-     * "Held" = event date is today or earlier. Guests are not included.
+     * For everyone who came to this group's events at least once (any role, Participants too):
+     * (events they attended) / (events of the group held since their first visit).
+     * "Held" = event date is today or earlier. Hidden (archived) events count too.
+     * Starting from the first visit means a newcomer is not punished for events before they joined.
      */
     public List<MemberRate> attendanceRates(String groupId) {
         LocalDate today = LocalDate.now(clock);
 
-        Set<String> heldEventIds = new HashSet<>();
+        List<Event> heldEvents = new ArrayList<>();
         for (Event event : eventRepository.findByGroupId(groupId)) {
             if (!event.getEventDate().isAfter(today)) {
-                heldEventIds.add(event.getEventId());
+                heldEvents.add(event);
+            }
+        }
+
+        // Student ID -> dates of the held events they attended (at most one record per event)
+        Map<String, List<LocalDate>> visits = new HashMap<>();
+        for (Event event : heldEvents) {
+            for (Attendance a : attendanceRepository.findByEventId(event.getEventId())) {
+                visits.computeIfAbsent(a.getStudentId(), id -> new ArrayList<>()).add(event.getEventDate());
             }
         }
 
         List<MemberRate> rates = new ArrayList<>();
-        for (User user : userRepository.findByGroupId(groupId)) {
-            if (user.isGuest()) {
+        for (Map.Entry<String, List<LocalDate>> entry : visits.entrySet()) {
+            Optional<User> user = userRepository.findById(entry.getKey());
+            if (user.isEmpty()) {
                 continue;
             }
-            int attended = 0;
-            for (Attendance a : attendanceRepository.findByStudentId(user.getStudentId())) {
-                if (heldEventIds.contains(a.getEventId())) {
-                    attended++; // at most one record per event, so no double counting
+            LocalDate firstVisit = Collections.min(entry.getValue());
+            int heldSinceFirstVisit = 0;
+            for (Event event : heldEvents) {
+                if (!event.getEventDate().isBefore(firstVisit)) {
+                    heldSinceFirstVisit++;
                 }
             }
-            int held = heldEventIds.size();
-            Double rate = (held == 0) ? null : attended * 100.0 / held;
-            rates.add(new MemberRate(user.getStudentId(), user.getName(), user.getRole(), attended, held, rate));
+            int attended = entry.getValue().size();
+            double rate = attended * 100.0 / heldSinceFirstVisit; // never 0: the first visit itself counts
+            rates.add(new MemberRate(user.get().getStudentId(), user.get().getName(), user.get().displayRole(),
+                    firstVisit, attended, heldSinceFirstVisit, rate));
         }
-        rates.sort(Comparator.comparing(MemberRate::name));
+        rates.sort(Comparator.comparing(MemberRate::name, String.CASE_INSENSITIVE_ORDER));
         return rates;
     }
 
