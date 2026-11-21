@@ -13,6 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -26,15 +28,21 @@ public class EventService {
     private final AttendanceRepository attendanceRepository;
     private final InvitationRepository invitationRepository;
     private final IdCounterRepository idCounterRepository;
+    private final AttendanceService attendanceService;
     private final Clock clock;
+
+    /** Start and end of a meeting. */
+    public record MeetingTime(LocalDateTime start, LocalDateTime end) {
+    }
 
     public EventService(EventRepository eventRepository, AttendanceRepository attendanceRepository,
                         InvitationRepository invitationRepository, IdCounterRepository idCounterRepository,
-                        Clock clock) {
+                        AttendanceService attendanceService, Clock clock) {
         this.eventRepository = eventRepository;
         this.attendanceRepository = attendanceRepository;
         this.invitationRepository = invitationRepository;
         this.idCounterRepository = idCounterRepository;
+        this.attendanceService = attendanceService;
         this.clock = clock;
     }
 
@@ -111,17 +119,61 @@ public class EventService {
         return event;
     }
 
-    public Event createEvent(String eventName, LocalDate eventDate, String location, String groupId) {
-        return createEvent(eventName, eventDate, location, groupId, null);
+    /**
+     * Start and end on the event date. An end at or before the start means the next day
+     * (e.g. 10:00 PM - 1:00 AM).
+     */
+    public static MeetingTime meetingTime(LocalDate date, LocalTime start, LocalTime end) {
+        LocalDateTime startAt = date.atTime(start);
+        LocalDateTime endAt = date.atTime(end);
+        if (!endAt.isAfter(startAt)) {
+            endAt = endAt.plusDays(1);
+        }
+        return new MeetingTime(startAt, endAt);
     }
 
-    /** folderId may be null (no folder). The caller checks that the folder belongs to the group. */
-    @Transactional
+    /** Without a meeting time (used by tests and old code paths). */
+    public Event createEvent(String eventName, LocalDate eventDate, String location, String groupId) {
+        return createEvent(eventName, eventDate, location, groupId, null, null);
+    }
+
     public Event createEvent(String eventName, LocalDate eventDate, String location, String groupId,
                              Long folderId) {
+        return createEvent(eventName, eventDate, location, groupId, folderId, null);
+    }
+
+    /**
+     * folderId may be null (no folder); the caller checks that the folder belongs to the group.
+     * time may be null (no meeting time).
+     */
+    @Transactional
+    public Event createEvent(String eventName, LocalDate eventDate, String location, String groupId,
+                             Long folderId, MeetingTime time) {
         Event event = new Event(nextEventId(), eventName, eventDate, location, groupId);
         event.moveToFolder(folderId);
+        if (time != null) {
+            event.setTimes(time.start(), time.end());
+        }
         return eventRepository.save(event);
+    }
+
+    /**
+     * Owner fixes the name, date, location, or meeting time (e.g. extends the end).
+     * time = null removes the meeting time. If the end changes, automatic check-outs are redone.
+     */
+    @Transactional
+    public void updateEvent(String eventId, String groupId, String eventName, LocalDate eventDate,
+                            String location, MeetingTime time) {
+        Event event = getEventInGroup(eventId, groupId);
+        LocalDateTime oldEnd = event.getEndAt();
+        event.changeDetails(eventName, eventDate, location);
+        event.setTimes(time == null ? null : time.start(), time == null ? null : time.end());
+        eventRepository.save(event);
+        LocalDateTime newEnd = event.getEndAt();
+        boolean endChanged = (oldEnd == null) ? newEnd != null : !oldEnd.equals(newEnd);
+        if (endChanged) {
+            attendanceService.redoAutoCheckOuts(event);
+        }
     }
 
     // ---------- Archive and delete ----------

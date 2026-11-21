@@ -5,6 +5,8 @@
 <header th:replace="~{fragments :: groupNav(${group})}"></header>
 <main>
     <h1 th:text="${event.eventName}">Event name</h1>
+    <p class="muted small" th:if="${event.endAt != null}"
+       th:text="'Ends ' + ${@timeFormat.dateTime(event.endAt)} + ' (then everyone left is checked out: Auto)'">Ends 11/24/2026 9:00 PM</p>
     <p class="muted small">Live · updates every 30 seconds ·
         <a th:href="@{/g/{gid}/events/{eid}(gid=${group.groupId},eid=${event.eventId})}">Event details &amp; QR</a></p>
 

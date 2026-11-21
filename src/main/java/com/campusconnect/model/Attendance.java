@@ -21,6 +21,7 @@ public class Attendance {
 
     public static final String SOURCE_SELF = "SELF";
     public static final String SOURCE_OWNER = "OWNER";
+    public static final String SOURCE_AUTO = "AUTO"; // checked out by the app at the event's end time
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // the database assigns 1, 2, 3, ...
@@ -50,6 +51,25 @@ public class Attendance {
         this.checkoutSource = SOURCE_SELF;
     }
 
+    /** Check-out by the app because the event ended while the person was still checked in. */
+    public void autoCheckOut(LocalDateTime time) {
+        this.checkOutTime = time;
+        this.checkoutSource = SOURCE_AUTO;
+    }
+
+    /** True if the app (not the person or the group) recorded this check-out. */
+    public boolean isAutoCheckOut() {
+        return SOURCE_AUTO.equals(checkoutSource);
+    }
+
+    /** Undoes an automatic check-out (used when the event end time changes). */
+    public void undoAutoCheckOut() {
+        if (isAutoCheckOut()) {
+            this.checkOutTime = null;
+            this.checkoutSource = null;
+        }
+    }
+
     /** Check-out time typed or fixed by the group. null = "still here" again. */
     public void setCheckOutByOwner(LocalDateTime time) {
         this.checkOutTime = time;
@@ -66,12 +86,18 @@ public class Attendance {
         this.checkInTime = time;
     }
 
-    /** Label for the participant list and CSV: "QR", "Owner", or "" if not checked out. */
+    /** Label for the participant list and CSV: "QR", "Owner", "Auto", or "" if not checked out. */
     public String checkoutSourceLabel() {
         if (checkOutTime == null) {
             return "";
         }
-        return SOURCE_OWNER.equals(checkoutSource) ? "Owner" : "QR"; // null = old QR check-out
+        if (SOURCE_OWNER.equals(checkoutSource)) {
+            return "Owner";
+        }
+        if (SOURCE_AUTO.equals(checkoutSource)) {
+            return "Auto";
+        }
+        return "QR"; // SELF, or null = old QR check-out
     }
 
     public boolean isCheckedOut() {

@@ -8,6 +8,7 @@ import com.campusconnect.service.FolderService;
 import com.campusconnect.service.GroupAccess;
 import com.campusconnect.service.GroupPassphrase;
 import com.campusconnect.service.GroupService;
+import com.campusconnect.service.TimeFormat;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,6 +20,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,16 +39,18 @@ public class GroupController {
     private final GroupPassphrase groupPassphrase;
     private final GroupAccess groupAccess;
     private final FolderService folderService;
+    private final TimeFormat timeFormat;
 
     public GroupController(GroupService groupService, EventService eventService,
                            AttendanceService attendanceService, GroupPassphrase groupPassphrase,
-                           GroupAccess groupAccess, FolderService folderService) {
+                           GroupAccess groupAccess, FolderService folderService, TimeFormat timeFormat) {
         this.groupService = groupService;
         this.eventService = eventService;
         this.attendanceService = attendanceService;
         this.groupPassphrase = groupPassphrase;
         this.groupAccess = groupAccess;
         this.folderService = folderService;
+        this.timeFormat = timeFormat;
     }
 
     // ---------- Group home: passphrase form or event list ----------
@@ -95,6 +101,11 @@ public class GroupController {
         model.addAttribute("group", group);
         model.addAttribute("folders", folderService.activeFolders(groupId));
         model.addAttribute("folderId", folderId);
+        // Defaults: today, starting now, ending 2 hours later (all can be changed)
+        LocalDateTime now = attendanceService.currentTime();
+        model.addAttribute("eventDate", now.toLocalDate());
+        model.addAttribute("startTime", timeFormat.time(now));
+        model.addAttribute("endTime", timeFormat.time(now.plusHours(2)));
         return "event-new";
     }
 
@@ -103,6 +114,8 @@ public class GroupController {
                               @RequestParam String eventName,
                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate eventDate,
                               @RequestParam String location,
+                              @RequestParam(defaultValue = "") String startTime,
+                              @RequestParam(defaultValue = "") String endTime,
                               @RequestParam(required = false) Long folderId, // empty = no folder
                               HttpSession session, Model model) {
         Group group = groupService.getGroup(groupId);
@@ -117,6 +130,16 @@ public class GroupController {
         if (eventDate == null) {
             errors.add("Date is required.");
         }
+        EventService.MeetingTime time = null;
+        try {
+            LocalTime start = timeFormat.parseTimeOfDay(startTime);
+            LocalTime end = timeFormat.parseTimeOfDay(endTime);
+            if (eventDate != null) {
+                time = EventService.meetingTime(eventDate, start, end); // end before start = next day
+            }
+        } catch (DateTimeParseException e) {
+            errors.add("Please enter the start and end time like 7:00 PM.");
+        }
         if (!errors.isEmpty()) {
             // Show the form again with the values already typed
             model.addAttribute("group", group);
@@ -124,6 +147,8 @@ public class GroupController {
             model.addAttribute("eventName", eventName);
             model.addAttribute("eventDate", eventDate);
             model.addAttribute("location", location);
+            model.addAttribute("startTime", startTime);
+            model.addAttribute("endTime", endTime);
             model.addAttribute("folders", folderService.activeFolders(groupId));
             model.addAttribute("folderId", folderId);
             return "event-new";
@@ -132,7 +157,7 @@ public class GroupController {
         // The group comes from the URL, so a group can only create events for itself
         // checkChosenFolder: 404 if the folder is not this group's (so no event lands in another group's folder)
         Long folder = folderService.checkChosenFolder(groupId, folderId);
-        Event event = eventService.createEvent(eventName.trim(), eventDate, location.trim(), groupId, folder);
+        Event event = eventService.createEvent(eventName.trim(), eventDate, location.trim(), groupId, folder, time);
         // Redirect after POST so refreshing the page does not create the event twice
         return "redirect:/g/" + groupId + "/events/" + event.getEventId();
     }

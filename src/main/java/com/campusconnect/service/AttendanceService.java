@@ -66,6 +66,46 @@ public class AttendanceService {
         return attendanceRepository.save(attendance);
     }
 
+    // ---------- Automatic check-out at the end time ----------
+
+    /**
+     * If the event has ended, checks out everyone still checked in, at the end time (Out by: Auto).
+     * Someone who checked in after the end time is checked out at their check-in time (stay 0).
+     * The free server sleeps, so this runs when an event page, Live, the CSV, or the exit page is opened.
+     * Returns how many people were checked out.
+     */
+    @Transactional
+    public int autoCheckOutIfOver(Event event) {
+        if (!event.isOver(now())) {
+            return 0;
+        }
+        int count = 0;
+        for (Attendance a : attendanceRepository.findByEventId(event.getEventId())) {
+            if (!a.isCheckedOut()) {
+                LocalDateTime end = event.getEndAt();
+                a.autoCheckOut(a.getCheckInTime().isAfter(end) ? a.getCheckInTime() : end);
+                attendanceRepository.save(a);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * After the end time changes (e.g. the meeting was extended): undo the automatic check-outs,
+     * then apply the new end time. Check-outs by QR or by the group are not touched.
+     */
+    @Transactional
+    public void redoAutoCheckOuts(Event event) {
+        for (Attendance a : attendanceRepository.findByEventId(event.getEventId())) {
+            if (a.isAutoCheckOut()) {
+                a.undoAutoCheckOut();
+                attendanceRepository.save(a);
+            }
+        }
+        autoCheckOutIfOver(event);
+    }
+
     /**
      * "Not you?" on the check-in result page: removes a check-in that was just made by mistake.
      * Only if it belongs to this event and the person has not checked out yet.

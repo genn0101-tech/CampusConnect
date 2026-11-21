@@ -8,7 +8,13 @@
     <p class="muted">
         <span th:text="${event.eventId}">EVT001</span> ·
         <span th:text="${@timeFormat.date(event.eventDate)}">11/24/2026</span> ·
+        <span th:if="${event.endAt != null}"
+              th:text="${@timeFormat.time(event.startAt)} + ' – ' + ${@timeFormat.time(event.endAt)} + ' · '">7:00 PM – 9:00 PM ·</span>
         <span th:text="${event.location}">Building A</span>
+    </p>
+    <p class="small">
+        <span th:if="${event.endAt == null}" class="muted">No end time: nobody is checked out automatically. </span>
+        <a th:href="@{/g/{gid}/events/{eid}/edit(gid=${group.groupId},eid=${event.eventId})}">Edit event / time</a>
     </p>
     <p class="result warn" th:if="${event.archived}">Archived: hidden from the event lists.</p>
     <p><a th:href="@{/g/{gid}/events/{eid}/live(gid=${group.groupId},eid=${event.eventId})}" class="button live-button">Live view</a></p>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Edit event')}"></head>
+<body>
+<header th:replace="~{fragments :: groupNav(${group})}"></header>
+<main class="narrow">
+    <h1>Edit event</h1>
+
+    <p class="error" th:if="${error}" th:text="${error}">Error</p>
+
+    <form th:action="@{/g/{gid}/events/{eid}/edit(gid=${group.groupId},eid=${event.eventId})}"
+          method="post" class="form">
+        <label>Event name
+            <input type="text" name="eventName" th:value="${eventName}" required>
+        </label>
+        <label>Date
+            <input type="date" name="eventDate" th:value="${eventDate}" required>
+        </label>
+        <!-- Plain text so the format is always 7:00 PM. An end before the start means the next day. -->
+        <div class="date-time">
+            <label>Start time
+                <input type="text" name="startTime" th:value="${startTime}" placeholder="7:00 PM">
+            </label>
+            <label>End time
+                <input type="text" name="endTime" th:value="${endTime}" placeholder="9:00 PM">
+            </label>
+        </div>
+        <p class="small muted">Changing the end time (for example, extending the meeting) redoes the
+            automatic check-outs. Leave both times empty for no end time (no automatic check-out).</p>
+        <label>Location
+            <input type="text" name="location" th:value="${location}">
+        </label>
+        <button type="submit">Save</button>
+    </form>
+
+    <p class="small"><a th:href="@{/g/{gid}/events/{eid}(gid=${group.groupId},eid=${event.eventId})}">Cancel</a></p>
+</main>
+</body>
+</html>

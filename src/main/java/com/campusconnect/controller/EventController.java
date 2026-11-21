@@ -67,6 +67,7 @@ public class EventController {
             return "redirect:/g/" + groupId;
         }
         Event event = eventService.getEventInGroup(eventId, groupId);
+        attendanceService.autoCheckOutIfOver(event); // the event may have ended while the server slept
         List<ParticipantRow> participants = attendanceService.participants(eventId);
 
         model.addAttribute("group", group);
@@ -112,6 +113,7 @@ public class EventController {
         requireUnlocked(session, groupId);
         Group group = groupService.getGroup(groupId);
         Event event = eventService.getEventInGroup(eventId, groupId);
+        attendanceService.autoCheckOutIfOver(event);
 
         List<ParticipantRow> participants = attendanceService.participants(eventId);
         String csv = reportService.buildCsv(event, participants,

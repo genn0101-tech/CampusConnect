@@ -62,6 +62,11 @@ public class TimeFormat {
         return date.atTime(parseTime(timeValue));
     }
 
+    /** Reads a time of day typed in a form, e.g. "7:00 PM" or "19:00". */
+    public LocalTime parseTimeOfDay(String text) {
+        return parseTime(text == null ? "" : text.trim());
+    }
+
     private LocalTime parseTime(String text) {
         Matcher m = TIME_INPUT.matcher(text);
         if (!m.matches()) {

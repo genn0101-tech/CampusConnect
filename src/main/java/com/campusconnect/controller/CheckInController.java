@@ -159,6 +159,7 @@ public class CheckInController {
     /** Like addEvent, plus whether "check out by name" is open (only on the event day). */
     private Event addCheckoutPage(String eventId, Model model) {
         Event event = addEvent(eventId, model);
+        attendanceService.autoCheckOutIfOver(event); // the event may have ended while the server slept
         model.addAttribute("nameCheckout", isEventDay(event));
         return event;
     }
@@ -179,6 +180,7 @@ public class CheckInController {
                                            @RequestParam(defaultValue = "") String q,
                                            @RequestParam(defaultValue = "") String id) {
         Event event = eventService.getEvent(eventId);
+        attendanceService.autoCheckOutIfOver(event); // people of an ended event are not suggested
         if (!isEventDay(event)) {
             return List.of();
         }

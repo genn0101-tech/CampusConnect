@@ -54,6 +54,7 @@ public class OwnerAttendanceController {
         if (!addGroupAndEvent(groupId, eventId, session, model)) {
             return "redirect:/g/" + groupId;
         }
+        attendanceService.autoCheckOutIfOver(eventService.getEventInGroup(eventId, groupId));
         List<ParticipantRow> rows = attendanceService.participants(eventId);
         long hereNow = rows.stream().filter(ParticipantRow::isStillHere).count();
         model.addAttribute("hereNow", hereNow);

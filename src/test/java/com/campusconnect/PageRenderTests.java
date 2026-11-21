@@ -54,7 +54,7 @@ class PageRenderTests {
     @Test
     void groupPagesOpen() throws Exception {
         String[] pages = {"/", "/groups/new", "/admin", "/g/GRIT", "/g/GRIT/people", "/g/GRIT/attendance-rate",
-                "/g/GRIT/events/new", "/g/GRIT/events/EVT001", "/g/GRIT/events/EVT001/live",
+                "/g/GRIT/events/new", "/g/GRIT/events/EVT001", "/g/GRIT/events/EVT001/edit", "/g/GRIT/events/EVT001/live",
                 "/g/GRIT/events/EVT001/checkout-all", "/g/GRIT/people/987654321/edit?from=live&eventId=EVT001",
                 "/g/GRIT/events/EVT001/report.csv"};
         for (String page : pages) {
@@ -66,7 +66,8 @@ class PageRenderTests {
     @Test
     void archiveAndDeletePagesOpen() throws Exception {
         // A new event of its own, so the sample data used by other tests stays as it is
-        HttpResponse<String> created = post("/g/GRIT/events", "eventName=Page+Test&eventDate=2026-12-24&location=Gym");
+        HttpResponse<String> created = post("/g/GRIT/events",
+                "eventName=Page+Test&eventDate=2026-12-24&startTime=7%3A00+PM&endTime=9%3A00+PM&location=Gym");
         String eventUrl = created.headers().firstValue("Location").orElseThrow().replace(base, "");
 
         assertEquals(302, post(eventUrl + "/archive", "").statusCode());
